@@ -11,6 +11,14 @@ class ResearchSource(BaseModel):
     title: str | None = None
     publisher: str | None = None
     published_at: datetime | None = None
+
+    snippet: str | None = None
+    content: str | None = None
+
+    provider: str | None = None
+    score: float | None = None
+    query: str | None = None
+
     notes: str | None = None
 
 

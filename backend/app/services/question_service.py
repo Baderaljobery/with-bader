@@ -1,10 +1,11 @@
 import uuid
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.question import Question
-from app.schemas.question import QuestionCreate, QuestionUpdate
+from app.schemas.question import QuestionAnswerUpdate, QuestionCreate, QuestionUpdate
 from app.services.guest_service import get_guest_by_id
 
 
@@ -72,3 +73,59 @@ def delete_question(db: Session, question_id: uuid.UUID) -> None:
     question = get_question_by_id(db, question_id)
     db.delete(question)
     db.commit()
+
+
+def set_question_answer(
+    db: Session, question_id: uuid.UUID, answer_in: QuestionAnswerUpdate
+) -> Question:
+    """Manual answer entry/edit/clear - independent of AI, always wins.
+
+    A non-empty answer marks the question answered/manual. A null or blank
+    answer clears it back to not_answered with no source. spoken_question is
+    only touched if the caller actually included that key in the request.
+    """
+    question = get_question_by_id(db, question_id)
+    updates = answer_in.model_dump(exclude_unset=True)
+
+    if "spoken_question" in updates:
+        question.spoken_question = updates["spoken_question"]
+
+    answer_text = (updates.get("answer") or "").strip() or None
+    if answer_text:
+        question.answer = answer_text
+        question.answer_status = "answered"
+        question.answer_source = "manual"
+    else:
+        question.answer = None
+        question.answer_status = "not_answered"
+        question.answer_source = None
+
+    question.answer_updated_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(question)
+    return question
+
+
+def apply_answer_match(
+    question: Question,
+    *,
+    answer: str | None,
+    answer_status: str,
+    answer_source: str | None,
+    spoken_question: str | None = None,
+) -> Question:
+    """Low-level field setter used by InterviewIntelligenceService.
+
+    Does NOT enforce the manual-answer-protection rule itself - the caller
+    (app/interview_intelligence/service.py) decides whether this should be
+    called at all for a given question. This only writes what it's told and
+    stamps answer_updated_at. No db.commit() here - callers batch-commit.
+    """
+    question.answer = answer
+    question.answer_status = answer_status
+    question.answer_source = answer_source
+    if spoken_question is not None:
+        question.spoken_question = spoken_question
+    question.answer_updated_at = datetime.now(timezone.utc)
+    return question

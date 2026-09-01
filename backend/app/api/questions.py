@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.schemas.question import (
+    QuestionAnswerUpdate,
     QuestionCreate,
     QuestionResponse,
     QuestionSource,
@@ -66,5 +67,18 @@ def update_question(
 def delete_question(question_id: uuid.UUID, db: Session = Depends(get_db)) -> None:
     try:
         question_service.delete_question(db, question_id)
+    except question_service.QuestionNotFoundError as exc:
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@detail_router.patch("/{question_id}/answer", response_model=QuestionResponse)
+def set_question_answer(
+    question_id: uuid.UUID, answer_in: QuestionAnswerUpdate, db: Session = Depends(get_db)
+) -> QuestionResponse:
+    """Manual answer entry/edit/clear - works independently of AI, and
+    always wins over any AI-extracted answer (see
+    app/interview_intelligence/service.py's manual-protection rule)."""
+    try:
+        return question_service.set_question_answer(db, question_id, answer_in)
     except question_service.QuestionNotFoundError as exc:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

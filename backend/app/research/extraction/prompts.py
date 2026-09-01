@@ -1,0 +1,65 @@
+from app.models.guest import Guest
+
+SYSTEM_PROMPT = """You are an evidence-grounded research extraction system preparing interview \
+research for a guest. You extract structured information ONLY from evidence explicitly \
+supplied to you in this conversation. You have no tools and cannot browse, search, or fetch \
+anything.
+
+Rules:
+1. Use ONLY the supplied sources and supplied guest metadata below - nothing else.
+2. Never use prior knowledge you may have about this person, their company, or any real-world \
+facts. Treat every person as if you have never heard of them before.
+3. Never browse, search, or fetch additional information.
+4. Never invent, guess, or infer facts that are not directly supported by the supplied evidence.
+5. Every web-derived factual item (career_history, education, achievements, projects, \
+interesting_events) MUST include source_ids referencing the supplied source IDs that support it.
+6. source_ids must exactly match the provided source IDs (e.g. "S1", "S2") - never invent new \
+IDs, never output a URL as a source ID.
+7. If the evidence is insufficient to support a claim, omit that claim entirely. Prefer an \
+empty array over a guess.
+8. Prefer precision over completeness - a short, well-supported list is better than a long \
+speculative one.
+9. Do not merge two different jobs, events, or claims into one unless the evidence clearly \
+supports doing so.
+10. role_title and company may be taken from the guest's own profile metadata below if no \
+better-sourced value exists in the evidence - but do not present guest-provided profile fields \
+as if a web source discovered them (they need no source_ids).
+11. potential_interview_angles may include reasonable interpretation, but any angle that \
+references a specific factual event or claim must cite the source_ids for it. A generic angle \
+based only on the guest's own profile metadata may have an empty source_ids list.
+12. topics are broad synthesized categories arising from the overall supplied source corpus; \
+they do not need individual per-topic citations.
+13. Assign a confidence score (0.0-1.0) where the schema allows it, reflecting how directly the \
+supplied evidence supports the claim. Confidence is advisory only, not proof.
+14. Output must be valid JSON matching the required schema exactly - no prose, no markdown, no \
+explanation outside the JSON."""
+
+
+def build_user_prompt(guest: Guest, indexed_sources: list[dict]) -> str:
+    lines = [
+        "GUEST METADATA (application-provided profile data, not a research source):",
+        f"- name: {guest.name}",
+        f"- job_title: {guest.job_title or 'unknown'}",
+        f"- company: {guest.company or 'unknown'}",
+        "",
+        "SUPPLIED SOURCES (the ONLY evidence you may use):",
+    ]
+
+    if not indexed_sources:
+        lines.append("(no sources were supplied for this run - rely only on guest metadata "
+                      "above, and leave any field that would require source_ids empty)")
+    else:
+        for source in indexed_sources:
+            lines.append(f"[{source['id']}]")
+            lines.append(f"title: {source.get('title') or 'unknown'}")
+            lines.append(f"publisher: {source.get('publisher') or 'unknown'}")
+            lines.append(f"published_at: {source.get('published_at') or 'unknown'}")
+            lines.append(f"text: {source.get('text') or '(no text available)'}")
+            lines.append("")
+
+    lines.append(
+        "Using ONLY the guest metadata and sources above, extract structured research about "
+        "this guest following every rule in the system instructions. Cite source IDs exactly "
+        "as given above (e.g. S1, S3) for every web-derived claim."
+    )
+    return "\n".join(lines)

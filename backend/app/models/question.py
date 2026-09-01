@@ -30,6 +30,14 @@ class Question(Base):
             name="questions_status_check",
         ),
         CheckConstraint("position >= 0", name="questions_position_check"),
+        CheckConstraint(
+            "answer_status IN ('not_answered', 'answered', 'uncertain')",
+            name="questions_answer_status_check",
+        ),
+        CheckConstraint(
+            "answer_source IS NULL OR answer_source IN ('manual', 'ai_extracted')",
+            name="questions_answer_source_check",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -51,6 +59,16 @@ class Question(Base):
     is_optional: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
 
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    spoken_question: Mapped[str | None] = mapped_column(Text, nullable=True)
+    answer: Mapped[str | None] = mapped_column(Text, nullable=True)
+    answer_status: Mapped[str] = mapped_column(
+        String, nullable=False, server_default="not_answered"
+    )
+    answer_source: Mapped[str | None] = mapped_column(String, nullable=True)
+    answer_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
