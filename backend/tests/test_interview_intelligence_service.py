@@ -221,6 +221,30 @@ class InterviewIntelligenceServiceTests(unittest.IsolatedAsyncioTestCase):
         finally:
             settings.interview_matcher_max_transcript_chars = original_limit
 
+    def test_matcher_provider_and_model_read_from_matcher_instance(self):
+        # A property read, not a match_and_apply() call - no async needed,
+        # but this lives in an IsolatedAsyncioTestCase so a plain `def` works
+        # fine alongside the async test methods above.
+        matcher = _ScriptedMatcher([])
+        service = InterviewIntelligenceService(matcher=matcher)
+        self.assertEqual(service.matcher_provider, "scripted")
+        self.assertIsNone(service.matcher_model)
+
+    def test_matcher_provider_and_model_for_mock_matcher(self):
+        from app.interview_intelligence.mock import MockQuestionAnswerMatcher
+
+        service = InterviewIntelligenceService(matcher=MockQuestionAnswerMatcher())
+        self.assertEqual(service.matcher_provider, "mock")
+        self.assertIsNone(service.matcher_model)
+
+    def test_matcher_provider_and_model_for_groq_matcher(self):
+        from app.interview_intelligence.groq import GroqQuestionAnswerMatcher
+
+        matcher = GroqQuestionAnswerMatcher(api_key="fake-key", model="openai/gpt-oss-20b")
+        service = InterviewIntelligenceService(matcher=matcher)
+        self.assertEqual(service.matcher_provider, "groq")
+        self.assertEqual(service.matcher_model, "openai/gpt-oss-20b")
+
 
 if __name__ == "__main__":
     unittest.main()

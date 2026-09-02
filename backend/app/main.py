@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.assets import router as assets_router
 from app.api.blocks import detail_router as blocks_detail_router
@@ -23,6 +24,20 @@ from app.api.questions import router as questions_router
 from app.api.text_extract import router as text_extract_router
 
 app = FastAPI(title="With Bader API")
+
+# Local-dev-only CORS: the frontend (Next.js) runs on a different origin
+# than the backend, so browser requests need this to succeed. Explicit
+# origin allowlist, no "*", since credentials are not used here anyway.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(guests_router)
 app.include_router(guest_interview_router)

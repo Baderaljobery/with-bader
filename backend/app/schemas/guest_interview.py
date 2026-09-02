@@ -21,5 +21,7 @@ class QuestionAnswerStateResponse(BaseModel):
 
 class GuestInterviewMatchResponse(BaseModel):
     guest_id: uuid.UUID
+    matcher_provider: str
+    matcher_model: str | None = None
     transcript: GuestTranscriptResponse
     questions: list[QuestionAnswerStateResponse]

@@ -1,6 +1,7 @@
 import io
+import json
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -9,6 +10,8 @@ from app.audio.models import TranscriptionResult
 from app.audio.service import SpeechToTextService
 from app.database.session import SessionLocal
 from app.interview_intelligence.base import QuestionAnswerMatcher
+from app.interview_intelligence.groq import GroqQuestionAnswerMatcher
+from app.interview_intelligence.mock import MockQuestionAnswerMatcher
 from app.interview_intelligence.models import (
     MatchedAnswer,
     QuestionAnswerMatchResult,
@@ -99,6 +102,10 @@ class TranscribeInterviewApiTests(unittest.TestCase):
         self.assertEqual(len(body["questions"]), 1)
         self.assertEqual(body["questions"][0]["answer_status"], "answered")
         self.assertEqual(body["questions"][0]["answer_source"], "ai_extracted")
+        # _ScriptedMatcher.provider_name = "scripted"; model_name is never
+        # set, so it inherits the base class default of None.
+        self.assertEqual(body["matcher_provider"], "scripted")
+        self.assertIsNone(body["matcher_model"])
 
     def test_guest_not_found_returns_404(self):
         _override_services()
@@ -260,8 +267,11 @@ class MatchAnswersApiTests(unittest.TestCase):
         response = client.post(f"/api/guests/{self.guest.id}/match-answers")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["transcript"]["text"], "corrected transcript")
-        self.assertEqual(response.json()["questions"][0]["answer"], "found after correction")
+        body = response.json()
+        self.assertEqual(body["transcript"]["text"], "corrected transcript")
+        self.assertEqual(body["questions"][0]["answer"], "found after correction")
+        self.assertEqual(body["matcher_provider"], "scripted")
+        self.assertIsNone(body["matcher_model"])
 
 
 class ManualAnswerApiTests(unittest.TestCase):
@@ -297,6 +307,99 @@ class ManualAnswerApiTests(unittest.TestCase):
         fake_id = "00000000-0000-0000-0000-000000000000"
         response = client.patch(f"/api/questions/{fake_id}/answer", json={"answer": "x"})
         self.assertEqual(response.status_code, 404)
+
+
+def _groq_patcher(payload: dict):
+    """Same mocking pattern as tests/test_interview_matcher.py - no real
+    network call, ever."""
+    message = MagicMock()
+    message.content = json.dumps(payload)
+    choice = MagicMock()
+    choice.message = message
+    response = MagicMock()
+    response.choices = [choice]
+    response.usage = MagicMock(prompt_tokens=10, completion_tokens=5)
+
+    mock_create = AsyncMock(return_value=response)
+    return patch(
+        "app.interview_intelligence.groq.AsyncGroq",
+        return_value=MagicMock(chat=MagicMock(completions=MagicMock(create=mock_create))),
+    )
+
+
+class MatcherMetadataApiTests(unittest.TestCase):
+    """Covers the observability addition: matcher_provider/matcher_model on
+    both /transcribe-interview and /match-answers, sourced from the real
+    matcher instance in use (not from settings/env directly)."""
+
+    def setUp(self):
+        self.db = SessionLocal()
+        self.guest = create_guest(self.db, GuestCreate(name="Matcher Metadata API Test Guest"))
+        app.dependency_overrides[_resolve_stt_service] = lambda: SpeechToTextService(
+            provider=_FakeSTTProvider(text="hello")
+        )
+
+    def tearDown(self):
+        _clear_overrides()
+        delete_guest(self.db, self.guest.id)
+        self.db.close()
+
+    def test_mock_matcher_metadata_on_transcribe(self):
+        app.dependency_overrides[_resolve_matcher_service] = lambda: InterviewIntelligenceService(
+            matcher=MockQuestionAnswerMatcher()
+        )
+
+        response = client.post(
+            f"/api/guests/{self.guest.id}/transcribe-interview",
+            files={"file": ("interview.mp3", io.BytesIO(b"data"), "audio/mpeg")},
+        )
+
+        self.assertEqual(response.status_code, 201)
+        body = response.json()
+        self.assertEqual(body["matcher_provider"], "mock")
+        self.assertIsNone(body["matcher_model"])
+
+    def test_groq_matcher_metadata_on_transcribe_and_match_answers(self):
+        with _groq_patcher({"matches": []}):
+            groq_matcher = GroqQuestionAnswerMatcher(api_key="fake-key", model="openai/gpt-oss-20b")
+            app.dependency_overrides[_resolve_matcher_service] = lambda: InterviewIntelligenceService(
+                matcher=groq_matcher
+            )
+
+            transcribe_response = client.post(
+                f"/api/guests/{self.guest.id}/transcribe-interview",
+                files={"file": ("interview.mp3", io.BytesIO(b"data"), "audio/mpeg")},
+            )
+
+        self.assertEqual(transcribe_response.status_code, 201)
+        transcribe_body = transcribe_response.json()
+        self.assertEqual(transcribe_body["matcher_provider"], "groq")
+        self.assertEqual(transcribe_body["matcher_model"], "openai/gpt-oss-20b")
+
+        with _groq_patcher({"matches": []}):
+            match_response = client.post(f"/api/guests/{self.guest.id}/match-answers")
+
+        self.assertEqual(match_response.status_code, 200)
+        match_body = match_response.json()
+        self.assertEqual(match_body["matcher_provider"], "groq")
+        self.assertEqual(match_body["matcher_model"], "openai/gpt-oss-20b")
+
+    def test_metadata_never_leaks_api_key_or_raw_response(self):
+        with _groq_patcher({"matches": []}):
+            groq_matcher = GroqQuestionAnswerMatcher(api_key="super-secret-key", model="openai/gpt-oss-20b")
+            app.dependency_overrides[_resolve_matcher_service] = lambda: InterviewIntelligenceService(
+                matcher=groq_matcher
+            )
+            response = client.post(
+                f"/api/guests/{self.guest.id}/transcribe-interview",
+                files={"file": ("interview.mp3", io.BytesIO(b"data"), "audio/mpeg")},
+            )
+
+        self.assertEqual(response.status_code, 201)
+        raw_body = response.text
+        self.assertNotIn("super-secret-key", raw_body)
+        self.assertNotIn("reasoning", raw_body)
+        self.assertNotIn("structured_output", raw_body)
 
 
 if __name__ == "__main__":

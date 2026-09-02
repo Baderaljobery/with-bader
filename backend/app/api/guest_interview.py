@@ -175,6 +175,8 @@ async def transcribe_interview(
 
     return GuestInterviewMatchResponse(
         guest_id=guest_id,
+        matcher_provider=matcher_service.matcher_provider,
+        matcher_model=matcher_service.matcher_model,
         transcript=GuestTranscriptResponse.model_validate(transcript),
         questions=_outcomes_to_response(outcomes),
     )
@@ -230,6 +232,8 @@ async def match_answers(
 
     return GuestInterviewMatchResponse(
         guest_id=guest_id,
+        matcher_provider=matcher_service.matcher_provider,
+        matcher_model=matcher_service.matcher_model,
         transcript=GuestTranscriptResponse.model_validate(transcript),
         questions=_outcomes_to_response(outcomes),
     )

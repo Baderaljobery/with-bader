@@ -38,6 +38,18 @@ class InterviewIntelligenceService:
     def __init__(self, matcher: QuestionAnswerMatcher) -> None:
         self._matcher = matcher
 
+    @property
+    def matcher_provider(self) -> str:
+        """Identifies the concrete matcher instance actually in use (e.g.
+        "mock" or "groq") - read from the instance itself, never inferred
+        from INTERVIEW_MATCHER_PROVIDER directly, so it always reflects what
+        really processed the request."""
+        return self._matcher.provider_name
+
+    @property
+    def matcher_model(self) -> str | None:
+        return self._matcher.model_name
+
     async def match_and_apply(
         self, db: Session, guest_id: uuid.UUID, transcript: str
     ) -> list[QuestionMatchOutcome]:
