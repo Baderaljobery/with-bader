@@ -4,9 +4,27 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.block import Block
+from app.models.notebook import Notebook
+from app.models.notebook_page import NotebookPage
 from app.schemas.block import BlockCreate, BlockUpdate
+from app.services.guest_service import get_guest_by_id
 from app.services.notebook_page_service import get_notebook_page_by_id
 from app.services.question_service import get_question_by_id
+
+# Text-like block types worth offering as Design Engine supporting context
+# (same set Content Creation's context builder uses - see
+# app/content/generation/context_builder.py / app/design_planning/context.py).
+TEXT_BLOCK_TYPES = (
+    "content_idea",
+    "personal_note",
+    "highlight",
+    "quote",
+    "question",
+    "answer",
+    "paragraph",
+    "heading",
+    "callout",
+)
 
 
 class BlockNotFoundError(Exception):
@@ -53,6 +71,23 @@ def update_block(db: Session, block_id: uuid.UUID, block_in: BlockUpdate) -> Blo
     db.commit()
     db.refresh(block)
     return block
+
+
+def get_text_blocks_for_guest(db: Session, guest_id: uuid.UUID) -> list[Block]:
+    """All text-like blocks across every notebook/page belonging to this
+    guest, for the Design Engine's supporting-notebook-content picker (the
+    user selects specific blocks manually - this just lists what's
+    available, it never auto-includes anything)."""
+    get_guest_by_id(db, guest_id)
+
+    stmt = (
+        select(Block)
+        .join(NotebookPage, Block.page_id == NotebookPage.id)
+        .join(Notebook, NotebookPage.notebook_id == Notebook.id)
+        .where(Notebook.guest_id == guest_id, Block.type.in_(TEXT_BLOCK_TYPES))
+        .order_by(Block.updated_at.desc())
+    )
+    return list(db.scalars(stmt).all())
 
 
 def delete_block(db: Session, block_id: uuid.UUID) -> None:

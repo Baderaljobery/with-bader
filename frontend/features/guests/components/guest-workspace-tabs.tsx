@@ -27,7 +27,7 @@ export function GuestWorkspaceTabs({ guestId }: { guestId: string }) {
   return (
     <nav
       aria-label="أقسام مساحة عمل الضيف"
-      className="-mx-1 flex gap-1 overflow-x-auto border-b border-[#E6EAF0] px-1"
+      className="flex gap-1 overflow-x-auto rounded-2xl border border-border bg-secondary/40 p-1.5"
     >
       {WORKSPACE_TABS.map((tab) => {
         const href = tab.segment ? `${basePath}/${tab.segment}` : basePath;
@@ -39,10 +39,10 @@ export function GuestWorkspaceTabs({ guestId }: { guestId: string }) {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "shrink-0 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors",
+              "shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-all",
               active
-                ? "border-[#1B8FEA] text-[#161616]"
-                : "border-transparent text-[#5F6368] hover:text-[#161616]",
+                ? "bg-white text-[#161616] shadow-[var(--shadow-soft)]"
+                : "text-[#5F6368] hover:bg-white/70 hover:text-[#161616]",
             )}
           >
             {tab.label}

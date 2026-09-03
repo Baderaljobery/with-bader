@@ -63,5 +63,33 @@ class Settings(BaseSettings):
     interview_matcher_max_questions: int = 50
     interview_matcher_auto_save_confidence: float = 0.75
 
+    content_generator_provider: str = "mock"
+    groq_content_model: str = "openai/gpt-oss-20b"
+    # Context-building limits, same spirit as question_generation's - keep a
+    # single generation request comfortably within Groq's tokens-per-minute
+    # budget. The transcript gets its own (smaller) cap since it is only
+    # supporting evidence, never the primary source (see PART on transcript
+    # context in the content-creation spec).
+    content_generation_max_answers: int = 12
+    content_generation_max_notebook_blocks: int = 15
+    content_generation_max_research_items: int = 10
+    content_generation_max_questions: int = 8
+    content_generation_max_transcript_chars: int = 4000
+    content_generation_max_input_chars: int = 10000
+
+    openrouter_api_key: str | None = None
+    # "Nano Banana 2" (Gemini 3.1 Flash Image), Google's current fast,
+    # general-purpose native image model, called through OpenRouter rather
+    # than Google's own API directly - Google Cloud's Gemini API free tier
+    # allocates zero quota for image-output models, while OpenRouter bills
+    # per-request against its own credit balance instead.
+    openrouter_image_model: str = "google/gemini-3.1-flash-image"
+    openrouter_timeout_seconds: float = 60.0
+    design_generation_max_body_chars: int = 600
+    design_generation_max_questions: int = 6
+
+    slide_planner_provider: str = "mock"
+    groq_slide_planner_model: str = "openai/gpt-oss-20b"
+
 
 settings = Settings()

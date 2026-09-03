@@ -7,9 +7,15 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-thmanyah-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-heading);
+  /* Reusable Design Engine typography tokens (design-notes.md >
+     Typography) - Serif Display/Text are prepared for templates and
+     editorial treatments, never applied app-wide. */
+  --font-thmanyah-sans: var(--font-thmanyah-sans);
+  --font-thmanyah-serif-display: var(--font-thmanyah-serif-display);
+  --font-thmanyah-serif-text: var(--font-thmanyah-serif-text);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,6 +55,13 @@
 }
 
 :root {
+  /* Primary UI family is Thmanyah Sans (see app/layout.tsx, lib/fonts.ts) -
+     one family with weight contrast for heading vs. body (see the "With
+     **Bader**" light/bold logo pairing), so --font-heading simply aliases
+     --font-sans rather than a second face. Thmanyah Serif Display/Text are
+     separate, reusable tokens for Design Engine templates only - see
+     --font-thmanyah-serif-display / --font-thmanyah-serif-text above. */
+  --font-heading: var(--font-sans);
   --background: #ffffff;
   --foreground: #161616;
   --card: #ffffff;
@@ -72,8 +85,16 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.875rem;
   --gradient-primary: linear-gradient(135deg, #1fcfc3 0%, #1b8fea 100%);
+  /* Atmosphere system (design-notes.md, "Atmosphere system") - the same
+     teal/blue pair reused as soft ambient glow + gentle surface tint,
+     distinct from --gradient-primary's use as a solid accent fill. */
+  --glow-teal: radial-gradient(circle, rgba(31, 207, 195, 0.24) 0%, rgba(31, 207, 195, 0) 70%);
+  --glow-blue: radial-gradient(circle, rgba(27, 143, 234, 0.24) 0%, rgba(27, 143, 234, 0) 70%);
+  --surface-tint: linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
+  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.03), 0 8px 24px -12px rgba(15, 23, 42, 0.08);
+  --shadow-elevated: 0 2px 4px rgba(15, 23, 42, 0.04), 0 16px 40px -16px rgba(15, 23, 42, 0.14);
   --sidebar: #ffffff;
   --sidebar-foreground: #161616;
   --sidebar-primary: #1b8fea;

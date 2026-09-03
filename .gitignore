@@ -14,8 +14,11 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# Anchored to repo root (not a bare "lib/"/"lib64/") - unanchored patterns
+# match at any depth and were silently excluding legitimate source
+# directories like frontend/lib/ and frontend/features/*/lib/ from git.
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -216,3 +219,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# With Bader: locally-stored generated design images (see
+# backend/app/design_generation/storage.py) - runtime output, not source.
+backend/storage/

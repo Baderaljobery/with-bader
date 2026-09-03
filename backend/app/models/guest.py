@@ -77,3 +77,9 @@ class Guest(Base):
     transcript: Mapped["GuestTranscript | None"] = relationship(
         back_populates="guest", cascade="all, delete-orphan", uselist=False
     )
+    content_drafts: Mapped[list["ContentDraft"]] = relationship(
+        back_populates="guest", cascade="all, delete-orphan"
+    )
+    design_drafts: Mapped[list["DesignDraft"]] = relationship(
+        back_populates="guest", cascade="all, delete-orphan"
+    )

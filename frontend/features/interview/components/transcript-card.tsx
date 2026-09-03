@@ -61,7 +61,7 @@ export function TranscriptCard({ guestId, transcript, onRematch, isRematching, o
           </div>
         </CardHeader>
         <CardContent>
-          <div className="max-h-80 overflow-y-auto rounded-lg bg-[#F7F8FA] p-3">
+          <div className="max-h-80 overflow-y-auto rounded-2xl border border-border/70 bg-secondary/40 p-4">
             <p className="whitespace-pre-wrap text-sm leading-7 text-[#161616]">{transcript.text}</p>
           </div>
         </CardContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import { FileAudio, Upload, X } from "lucide-react";
+import { FileAudio, Mic, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -57,7 +57,7 @@ export function AudioUploadCard({ file, error, onFileSelect, disabled }: AudioUp
   }
 
   return (
-    <div>
+    <div className="flex flex-col items-center gap-6 text-center">
       <input
         ref={inputRef}
         type="file"
@@ -69,12 +69,12 @@ export function AudioUploadCard({ file, error, onFileSelect, disabled }: AudioUp
       />
 
       {file ? (
-        <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-white px-4 py-3 shadow-[var(--shadow-soft)]">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-[#1B8FEA]">
-            <FileAudio className="size-5" aria-hidden="true" />
+            <FileAudio className="size-4.5" aria-hidden="true" />
           </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
+          <div className="min-w-0 text-start">
+            <p className="max-w-56 truncate text-sm font-medium text-foreground">{file.name}</p>
             <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
           </div>
           <Button
@@ -103,24 +103,43 @@ export function AudioUploadCard({ file, error, onFileSelect, disabled }: AudioUp
             validateAndSelect(event.dataTransfer.files?.[0] ?? null);
           }}
           className={cn(
-            "flex flex-col items-center gap-3 rounded-xl border-2 border-dashed px-4 py-12 text-center transition-colors",
-            disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
-            isDragging
-              ? "border-[#1B8FEA] bg-[#F7F8FA]"
-              : "border-border hover:border-[#1B8FEA]/40 hover:bg-[#F7F8FA]",
+            "group flex flex-col items-center gap-5",
+            disabled ? "pointer-events-none opacity-60" : "cursor-pointer",
           )}
         >
-          <span className="flex size-12 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-white">
-            <Upload className="size-5" aria-hidden="true" />
-          </span>
-          <span className="text-sm font-medium text-foreground">اسحب الملف هنا أو اختر ملفًا</span>
-          <span className="text-xs text-muted-foreground">
-            الصيغ المدعومة: {ALLOWED_EXTENSIONS.join(", ")} · بحد أقصى {MAX_FILE_SIZE_MB} ميجابايت
-          </span>
+          <div
+            className={cn(
+              "relative flex size-28 items-center justify-center transition-transform duration-300",
+              isDragging ? "scale-105" : "group-hover:-translate-y-1",
+            )}
+          >
+            <div
+              className={cn(
+                "flex size-24 flex-col items-center justify-center gap-1.5 rounded-2xl border bg-white shadow-[var(--shadow-elevated)] transition-colors",
+                isDragging ? "border-[#1B8FEA]" : "border-border",
+              )}
+            >
+              <span className="h-1.5 w-10 rounded-full bg-secondary" />
+              <span className="h-1.5 w-12 rounded-full bg-secondary" />
+              <span className="h-1.5 w-8 rounded-full bg-secondary" />
+            </div>
+            <span className="absolute -top-3 -end-3 flex size-10 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-white shadow-[0_8px_20px_-6px_rgba(27,143,234,0.55)]">
+              <Mic className="size-4.5" aria-hidden="true" />
+            </span>
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="font-heading text-xl font-semibold text-foreground">
+              اسحب الملف هنا أو اضغط للاختيار
+            </p>
+            <p className="text-sm text-muted-foreground">
+              الصيغ المدعومة: {ALLOWED_EXTENSIONS.join(", ")} · بحد أقصى {MAX_FILE_SIZE_MB} ميجابايت
+            </p>
+          </div>
         </label>
       )}
 
-      {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }

@@ -5,10 +5,22 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.schemas.block import BlockCreate, BlockResponse, BlockUpdate
-from app.services import block_service, notebook_page_service, question_service
+from app.services import block_service, guest_service, notebook_page_service, question_service
 
 router = APIRouter(prefix="/api/notebook-pages/{page_id}/blocks", tags=["blocks"])
 detail_router = APIRouter(prefix="/api/blocks", tags=["blocks"])
+guest_blocks_router = APIRouter(prefix="/api/guests/{guest_id}/notebook-blocks", tags=["blocks"])
+
+
+@guest_blocks_router.get("", response_model=list[BlockResponse])
+def list_guest_notebook_blocks(guest_id: uuid.UUID, db: Session = Depends(get_db)) -> list[BlockResponse]:
+    """Text-like notebook blocks across all of this guest's notebooks - the
+    Design Engine's supporting-content picker (Part 6 of the Design Engine
+    rework) lists these so the user can explicitly select some."""
+    try:
+        return block_service.get_text_blocks_for_guest(db, guest_id)
+    except guest_service.GuestNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @router.post("", response_model=BlockResponse, status_code=status.HTTP_201_CREATED)

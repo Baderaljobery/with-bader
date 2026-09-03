@@ -57,16 +57,19 @@ export function GuestGrid({ onAddGuest }: { onAddGuest: () => void }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-[#161616]">الضيوف</h2>
-        <div className="relative w-full max-w-64">
-          <Search className="absolute end-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#5F6368]" aria-hidden="true" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="font-heading text-lg font-semibold text-foreground">الضيوف</h2>
+        <div className="relative w-full sm:max-w-80">
+          <Search
+            className="absolute end-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="ابحث عن ضيف..."
+            placeholder="ابحث عن ضيف بالاسم أو الشركة..."
             aria-label="ابحث عن ضيف"
-            className="pe-8"
+            className="h-11 rounded-full border-border bg-white pe-10 shadow-[var(--shadow-soft)]"
           />
         </div>
       </div>

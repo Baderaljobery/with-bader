@@ -27,10 +27,10 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all",
               active
-                ? "bg-[image:var(--gradient-primary)] text-white shadow-sm"
-                : "text-[#5F6368] hover:bg-[#F7F8FA] hover:text-[#161616]",
+                ? "bg-[image:var(--gradient-primary)] text-white shadow-[0_8px_20px_-8px_rgba(27,143,234,0.55)]"
+                : "text-[#5F6368] hover:bg-secondary hover:text-[#161616]",
             )}
           >
             <Icon className="size-4.5 shrink-0" aria-hidden="true" />

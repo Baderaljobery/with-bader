@@ -31,9 +31,9 @@ export function QuestionCard({ guestId, question, index, onImprove, onShowHistor
 
   return (
     <>
-      <Card>
+      <Card className="transition-shadow hover:shadow-[var(--shadow-elevated)]">
         <CardContent className="flex items-start gap-3">
-          <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-[#F7F8FA] text-xs font-medium text-[#5F6368]">
+          <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-[#1B8FEA]">
             {index + 1}
           </span>
 

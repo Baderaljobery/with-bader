@@ -9,6 +9,9 @@ from app.models.notebook_page import NotebookPage
 from app.models.question import Question
 from app.models.question_version import QuestionVersion
 from app.models.block import Block
+from app.models.content_draft import ContentDraft
+from app.models.design_draft import DesignDraft
+from app.models.design_slide import DesignSlide
 
 __all__ = [
     "Asset",
@@ -22,4 +25,7 @@ __all__ = [
     "Question",
     "QuestionVersion",
     "Block",
+    "ContentDraft",
+    "DesignDraft",
+    "DesignSlide",
 ]

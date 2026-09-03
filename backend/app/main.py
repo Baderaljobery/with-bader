@@ -1,9 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.assets import router as assets_router
 from app.api.blocks import detail_router as blocks_detail_router
+from app.api.blocks import guest_blocks_router
 from app.api.blocks import router as blocks_router
+from app.api.content import detail_router as content_detail_router
+from app.api.content import router as content_router
+from app.api.design import detail_router as design_detail_router
+from app.api.design import router as design_router
 from app.api.guest_interview import router as guest_interview_router
 from app.api.guest_links import detail_router as guest_link_detail_router
 from app.api.guest_links import router as guest_links_router
@@ -22,6 +28,7 @@ from app.api.question_versions import router as question_versions_router
 from app.api.questions import detail_router as questions_detail_router
 from app.api.questions import router as questions_router
 from app.api.text_extract import router as text_extract_router
+from app.design_generation.storage import MEDIA_URL_PREFIX, STORAGE_DIR
 
 app = FastAPI(title="With Bader API")
 
@@ -59,7 +66,18 @@ app.include_router(notebook_pages_router)
 app.include_router(notebook_pages_detail_router)
 app.include_router(blocks_router)
 app.include_router(blocks_detail_router)
+app.include_router(guest_blocks_router)
 app.include_router(text_extract_router)
+app.include_router(content_router)
+app.include_router(content_detail_router)
+app.include_router(design_router)
+app.include_router(design_detail_router)
+
+# Serves generated design images back out from local disk (see
+# app/design_generation/storage.py) - the directory must exist before
+# StaticFiles mounts it.
+STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+app.mount(MEDIA_URL_PREFIX, StaticFiles(directory=STORAGE_DIR), name="design-drafts-media")
 
 
 @app.get("/health")

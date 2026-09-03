@@ -4,7 +4,7 @@ import { Plus, Sparkles } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
-import { PageHeader } from "@/components/shared/page-header";
+import { SectionHeader } from "@/components/shared/section-header";
 import { Button } from "@/components/ui/button";
 import { GenerationDialog } from "@/features/questions/components/generation/generation-dialog";
 import { GenerationPreviewSheet } from "@/features/questions/components/generation/generation-preview-sheet";
@@ -25,7 +25,7 @@ export default function GuestQuestionsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
+      <SectionHeader
         title="الأسئلة"
         description="إدارة أسئلة المقابلة وإنشاؤها وتحسينها بالذكاء الاصطناعي"
         action={

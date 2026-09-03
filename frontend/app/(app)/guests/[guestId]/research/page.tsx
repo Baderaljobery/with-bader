@@ -48,7 +48,7 @@ export default function GuestResearchPage() {
 
   if (latest.isPending) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <Skeleton className="h-20 w-full" />
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-32 w-full" />
@@ -89,7 +89,7 @@ export default function GuestResearchPage() {
   if (!displayedResearch) return null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <ResearchHeader
         guestId={guestId}
         research={displayedResearch}

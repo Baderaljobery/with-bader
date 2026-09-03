@@ -31,8 +31,8 @@ function InfoChip({ icon: Icon, label, value }: { icon: LucideIcon; label: strin
   return (
     <Card size="sm">
       <CardContent className="flex items-center gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F7F8FA] text-[#1B8FEA]">
-          <Icon className="size-4" aria-hidden="true" />
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[image:var(--gradient-primary)] text-white shadow-[0_6px_14px_-4px_rgba(27,143,234,0.4)]">
+          <Icon className="size-4.5" aria-hidden="true" />
         </span>
         <div className="min-w-0">
           <p className="text-xs text-[#5F6368]">{label}</p>
@@ -52,7 +52,7 @@ export default function GuestOverviewPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <InfoChip
           icon={Building2}

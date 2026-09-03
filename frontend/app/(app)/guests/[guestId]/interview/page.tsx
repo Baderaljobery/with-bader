@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
-import { PageHeader } from "@/components/shared/page-header";
+import { SectionHeader } from "@/components/shared/section-header";
 import { ErrorState } from "@/components/shared/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InterviewEmptyState } from "@/features/interview/components/interview-empty-state";
@@ -41,7 +41,7 @@ export default function GuestInterviewPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
+      <SectionHeader
         title="المقابلة"
         description="تفريغ نص المقابلة وربط الإجابات المستخرجة بالأسئلة المحفوظة"
       />

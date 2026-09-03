@@ -29,28 +29,35 @@ export function ResearchHeader({
 }: ResearchHeaderProps) {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h2 className="font-heading text-lg font-semibold text-[#161616]">ملف البحث</h2>
-            <Badge variant="secondary" className="font-normal">
-              الإصدار {research.version}
-            </Badge>
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-white px-5 py-4 shadow-[var(--shadow-soft)]">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-12 end-[-2rem] size-44 rounded-full opacity-60 blur-2xl"
+          style={{ backgroundImage: "var(--glow-blue)" }}
+        />
+        <div className="relative flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <h2 className="font-heading text-lg font-semibold text-[#161616]">ملف البحث</h2>
+              <Badge variant="secondary" className="font-normal">
+                الإصدار {research.version}
+              </Badge>
+            </div>
+            <p className="text-sm text-[#5F6368]">آخر تحديث: {formatDate(research.created_at)}</p>
           </div>
-          <p className="text-sm text-[#5F6368]">آخر تحديث: {formatDate(research.created_at)}</p>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <ResearchVersionHistory
-            guestId={guestId}
-            latestId={latestId}
-            activeResearchId={research.id}
-            onSelectVersion={onSelectVersion}
-          />
-          <Button size="sm" onClick={onRerun} disabled={isRerunning}>
-            <RefreshCw className="size-4" />
-            {isRerunning ? "جارٍ إعادة البحث..." : "إعادة البحث"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <ResearchVersionHistory
+              guestId={guestId}
+              latestId={latestId}
+              activeResearchId={research.id}
+              onSelectVersion={onSelectVersion}
+            />
+            <Button size="sm" onClick={onRerun} disabled={isRerunning}>
+              <RefreshCw className="size-4" />
+              {isRerunning ? "جارٍ إعادة البحث..." : "إعادة البحث"}
+            </Button>
+          </div>
         </div>
       </div>
 

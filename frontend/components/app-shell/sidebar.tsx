@@ -8,11 +8,16 @@ import { SidebarNav } from "./sidebar-nav";
  */
 export function Sidebar() {
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-l border-[#E6EAF0] bg-white px-4 py-6 md:flex">
-      <div className="border-b border-[#E6EAF0] pb-6">
-        <Brand size="nav" className="px-3" />
+    <aside className="hidden w-72 shrink-0 flex-col border-l border-[#E6EAF0] bg-white px-4 py-6 md:flex">
+      <div className="relative overflow-hidden rounded-2xl border border-[#E6EAF0] bg-secondary/50 px-4 py-5">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-14 start-1/2 size-44 -translate-x-1/2 rounded-full opacity-90 blur-2xl"
+          style={{ backgroundImage: "var(--glow-teal)" }}
+        />
+        <Brand size="nav" className="relative px-0" />
       </div>
-      <div className="mt-6 flex-1">
+      <div className="mt-4 flex-1">
         <SidebarNav />
       </div>
     </aside>

@@ -40,7 +40,7 @@ export function GuestCard({ guest }: { guest: Guest }) {
         onKeyDown={(event) => {
           if (event.key === "Enter") router.push(`/guests/${guest.id}`);
         }}
-        className="group relative cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="group relative cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <span
           aria-hidden="true"
@@ -48,8 +48,8 @@ export function GuestCard({ guest }: { guest: Guest }) {
         />
 
         <CardHeader className="flex-row items-start justify-between gap-2 space-y-0">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-sm font-semibold text-white">
+          <div className="flex items-center gap-3.5">
+            <div className="relative flex size-12 shrink-0 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-base font-semibold text-white shadow-[0_6px_16px_-4px_rgba(27,143,234,0.45)]">
               {initials(guest.name) || "؟"}
             </div>
             <div className="min-w-0">

@@ -192,9 +192,9 @@ function NotebookWorkspaceContent({
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-[240px_1fr]">
+    <div className="grid gap-5 md:grid-cols-[260px_1fr]">
       <div className="hidden md:block">
-        <div className="rounded-xl border border-border bg-secondary/20 p-2">
+        <div className="rounded-2xl border border-border bg-white p-2.5 shadow-[var(--shadow-soft)]">
           <NotebookSidebar {...sidebarProps} />
         </div>
       </div>
@@ -216,13 +216,20 @@ function NotebookWorkspaceContent({
         </Sheet>
       </div>
 
-      <div className="min-w-0 rounded-xl border border-border bg-background p-4 md:p-6">
-        <NotebookEditor
-          page={activePage}
-          notebookId={activeNotebookId}
-          guestId={guestId}
-          onPageDeleted={handlePageDeleted}
+      <div className="relative min-w-0 overflow-hidden rounded-3xl border border-border bg-white p-5 shadow-[var(--shadow-soft)] md:p-8">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-24 end-[-6rem] size-72 rounded-full opacity-50 blur-3xl"
+          style={{ backgroundImage: "var(--glow-teal)" }}
         />
+        <div className="relative">
+          <NotebookEditor
+            page={activePage}
+            notebookId={activeNotebookId}
+            guestId={guestId}
+            onPageDeleted={handlePageDeleted}
+          />
+        </div>
       </div>
     </div>
   );

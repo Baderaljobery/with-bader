@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api/client";
 import type { Question } from "@/features/questions/types/question";
 import { useUpdateQuestionAnswer } from "../hooks/use-update-question-answer";
@@ -67,8 +68,21 @@ export function QuestionAnswerCard({ guestId, question, matchResult, index }: Qu
 
   const unchanged = draft.trim() === (question.answer ?? "").trim();
 
+  // Left-accent (start-border) makes the answer's origin scannable at a
+  // glance across a long list: blue = a person typed it, teal = the AI
+  // matched it from the transcript, amber = flagged for review, neutral =
+  // still unanswered. Purely visual - answer_source/answer_status already
+  // drive this same distinction via the badges below.
+  const accentClassName = isManual
+    ? "border-s-4 border-s-[#1B8FEA]"
+    : question.answer_status === "answered"
+      ? "border-s-4 border-s-[#1FCFC3]"
+      : candidateAnswer
+        ? "border-s-4 border-s-amber-400"
+        : "";
+
   return (
-    <Card>
+    <Card className={cn(accentClassName)}>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <p className="text-sm font-medium text-[#161616]">
