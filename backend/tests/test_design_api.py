@@ -1,12 +1,6 @@
 import unittest
-from unittest.mock import AsyncMock
 
-from fastapi.testclient import TestClient
-
-from app.api.design import _resolve_image_engine, _resolve_planner
-from app.design_generation.base import ImageGenerator
-from app.design_generation.engine import SlideImageGenerationEngine
-from app.design_generation.models import ImageGenerationResult
+from app.api.design import _resolve_planner
 from app.design_planning.engine import DesignContentPlanner
 from app.design_planning.mock import MockSlidePlanner
 from app.database.session import SessionLocal
@@ -15,39 +9,23 @@ from app.schemas.content_draft import ContentDraftCreate
 from app.schemas.guest import GuestCreate
 from app.services import content_service, design_service
 from app.services.guest_service import create_guest, delete_guest
+from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
 
-client = TestClient(app)
-
-
-class _FakeImageGenerator(ImageGenerator):
-    provider_name = "fake"
-    model_name = "fake-model"
-
-    def __init__(self):
-        self.generate = AsyncMock(
-            return_value=ImageGenerationResult(image_bytes=b"fake-png-bytes", mime_type="image/png")
-        )
-
-    async def generate(self, prompt, options):  # pragma: no cover - replaced in __init__
-        raise NotImplementedError
+client = make_authenticated_client()
 
 
 def _override_dependencies():
-    app.dependency_overrides[_resolve_image_engine] = lambda: SlideImageGenerationEngine(
-        generator=_FakeImageGenerator()
-    )
     app.dependency_overrides[_resolve_planner] = lambda: DesignContentPlanner(planner=MockSlidePlanner())
 
 
 def _clear_overrides():
-    app.dependency_overrides.pop(_resolve_image_engine, None)
     app.dependency_overrides.pop(_resolve_planner, None)
 
 
 class DesignPlanApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Design Plan API Test Guest"))
+        self.guest = create_guest(self.db, GuestCreate(name="Design Plan API Test Guest"), created_by=client.user_id)
         self.content_draft = content_service.create_content_draft(
             self.db,
             self.guest.id,
@@ -133,8 +111,8 @@ class DesignPlanApiTests(unittest.TestCase):
 class DesignCreateAndLifecycleApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Design Lifecycle API Test Guest"))
-        self.other_guest = create_guest(self.db, GuestCreate(name="Other Design Guest"))
+        self.guest = create_guest(self.db, GuestCreate(name="Design Lifecycle API Test Guest"), created_by=client.user_id)
+        self.other_guest = create_guest(self.db, GuestCreate(name="Other Design Guest"), created_by=client.user_id)
         self.content_draft = content_service.create_content_draft(
             self.db,
             self.guest.id,
@@ -179,9 +157,8 @@ class DesignCreateAndLifecycleApiTests(unittest.TestCase):
         self.assertEqual(len(body["slides"]), 3)
         self.assertTrue(all(slide["image_path"] is None for slide in body["slides"]))
         self.assertNotIn("prompt", body["slides"][0])
-        # Part 24 confirmation: creating a design (the strict template flow)
-        # never calls the OpenRouter/Gemini image engine at all - there is
-        # simply no provider/model recorded yet.
+        # Creating a design (the strict template flow) never calls an AI
+        # image engine at all - there is simply no provider/model recorded.
         self.assertIsNone(body["ai_provider"])
         self.assertIsNone(body["ai_model"])
 
@@ -209,75 +186,6 @@ class DesignCreateAndLifecycleApiTests(unittest.TestCase):
         other_response = client.get(f"/api/guests/{self.other_guest.id}/designs")
         self.assertEqual(other_response.json(), [])
 
-    def test_generate_creates_images_for_all_slides(self):
-        created = self._create().json()
-        response = client.post(f"/api/designs/{created['id']}/generate")
-        self.assertEqual(response.status_code, 200)
-        body = response.json()
-        self.assertTrue(all(slide["image_path"] for slide in body["slides"]))
-        self.assertEqual(body["ai_provider"], "fake")
-
-    def test_generate_only_fills_missing_slides_not_regenerate_existing(self):
-        created = self._create().json()
-        client.post(f"/api/designs/{created['id']}/generate")
-        after_first = client.get(f"/api/designs/{created['id']}").json()
-        first_paths = [s["image_path"] for s in after_first["slides"]]
-
-        # Second call to /generate must be a no-op image-wise (all slides
-        # already have an image) - cost control (Part 28).
-        response = client.post(f"/api/designs/{created['id']}/generate")
-        second_paths = [s["image_path"] for s in response.json()["slides"]]
-        self.assertEqual(first_paths, second_paths)
-
-    def test_regenerate_all_replaces_every_slide_image(self):
-        created = self._create().json()
-        client.post(f"/api/designs/{created['id']}/generate")
-        before = client.get(f"/api/designs/{created['id']}").json()
-        before_paths = [s["image_path"] for s in before["slides"]]
-
-        response = client.post(f"/api/designs/{created['id']}/regenerate-all")
-        after_paths = [s["image_path"] for s in response.json()["slides"]]
-        self.assertEqual(len(before_paths), len(after_paths))
-        for old, new in zip(before_paths, after_paths):
-            self.assertNotEqual(old, new)
-
-    def test_regenerate_one_slide_preserves_other_slides(self):
-        created = self._create().json()
-        client.post(f"/api/designs/{created['id']}/generate")
-        before = client.get(f"/api/designs/{created['id']}").json()
-        before_by_index = {s["slide_index"]: s for s in before["slides"]}
-
-        response = client.post(f"/api/designs/{created['id']}/slides/2/regenerate", json={})
-        self.assertEqual(response.status_code, 200)
-        regenerated = response.json()
-        self.assertEqual(regenerated["slide_index"], 2)
-        self.assertNotEqual(regenerated["image_path"], before_by_index[2]["image_path"])
-
-        after = client.get(f"/api/designs/{created['id']}").json()
-        after_by_index = {s["slide_index"]: s for s in after["slides"]}
-        self.assertEqual(after_by_index[1]["image_path"], before_by_index[1]["image_path"])
-        self.assertEqual(after_by_index[3]["image_path"], before_by_index[3]["image_path"])
-        self.assertEqual(after_by_index[2]["image_path"], regenerated["image_path"])
-
-    def test_manual_text_edit_survives_slide_regeneration(self):
-        created = self._create().json()
-        client.post(f"/api/designs/{created['id']}/generate")
-
-        patch_response = client.patch(
-            f"/api/designs/{created['id']}/slides/1",
-            json={"headline": "عنوان معدّل يدويًا", "body_text": "نص معدل يدويًا."},
-        )
-        self.assertEqual(patch_response.status_code, 200)
-
-        regen_response = client.post(f"/api/designs/{created['id']}/slides/1/regenerate", json={})
-        self.assertEqual(regen_response.status_code, 200)
-        self.assertEqual(regen_response.json()["headline"], "عنوان معدّل يدويًا")
-        self.assertEqual(regen_response.json()["body_text"], "نص معدل يدويًا.")
-
-        refetched = client.get(f"/api/designs/{created['id']}").json()
-        slide_one = next(s for s in refetched["slides"] if s["slide_index"] == 1)
-        self.assertEqual(slide_one["headline"], "عنوان معدّل يدويًا")
-
     def test_update_shared_draft_fields(self):
         created = self._create().json()
         response = client.patch(
@@ -287,16 +195,66 @@ class DesignCreateAndLifecycleApiTests(unittest.TestCase):
         self.assertEqual(response.json()["background_color"], "#0B1F3A")
         self.assertEqual(response.json()["status"], "approved")
 
+    def test_create_without_cta_text_persists_as_null(self):
+        """cta_text is genuinely optional end-to-end - omitting it entirely
+        from a slide must not be rejected or coerced into an empty string."""
+        created = self._create().json()
+        self.assertTrue(all(slide["cta_text"] is None for slide in created["slides"]))
+
+    def test_create_with_cta_text_persists_it(self):
+        payload = self._create_payload(
+            slides=[{"index": 1, "role": "cover", "headline": "عنوان", "body_text": "", "cta_text": "تابعنا"}],
+            slide_count=1,
+        )
+        response = client.post(f"/api/guests/{self.guest.id}/designs", json=payload)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["slides"][0]["cta_text"], "تابعنا")
+
+    def test_update_slide_with_explicit_null_cta_clears_it(self):
+        created = self._create(
+            slides=[{"index": 1, "role": "cover", "headline": "عنوان", "body_text": "", "cta_text": "تابعنا"}],
+            slide_count=1,
+        ).json()
+
+        response = client.patch(
+            f"/api/designs/{created['id']}/slides/1",
+            json={"headline": "رؤيتي في إدارة الموظفين", "body_text": "نص الجسم.", "cta_text": None},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertIsNone(body["cta_text"])
+        self.assertEqual(body["headline"], "رؤيتي في إدارة الموظفين")
+        self.assertEqual(body["body_text"], "نص الجسم.")
+
+    def test_saved_null_cta_survives_a_refetch(self):
+        created = self._create(
+            slides=[{"index": 1, "role": "cover", "headline": "عنوان", "body_text": "", "cta_text": "تابعنا"}],
+            slide_count=1,
+        ).json()
+        client.patch(f"/api/designs/{created['id']}/slides/1", json={"cta_text": None})
+
+        refetched = client.get(f"/api/designs/{created['id']}").json()
+        self.assertIsNone(refetched["slides"][0]["cta_text"])
+
+    def test_update_slide_without_cta_field_leaves_existing_cta_untouched(self):
+        """exclude_unset semantics: omitting cta_text from the PATCH body
+        entirely must not be confused with explicitly clearing it."""
+        created = self._create(
+            slides=[{"index": 1, "role": "cover", "headline": "عنوان", "body_text": "", "cta_text": "تابعنا"}],
+            slide_count=1,
+        ).json()
+
+        response = client.patch(f"/api/designs/{created['id']}/slides/1", json={"headline": "عنوان جديد"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["cta_text"], "تابعنا")
+
     def test_delete_design_removes_it(self):
         created = self._create().json()
         response = client.delete(f"/api/designs/{created['id']}")
         self.assertEqual(response.status_code, 204)
         self.assertEqual(client.get(f"/api/designs/{created['id']}").status_code, 404)
-
-    def test_regenerate_slide_returns_404_for_unknown_slide_index(self):
-        created = self._create().json()
-        response = client.post(f"/api/designs/{created['id']}/slides/99/regenerate", json={})
-        self.assertEqual(response.status_code, 404)
 
     def test_slide_count_one_to_five_all_creatable(self):
         for count in range(1, 6):
@@ -321,3 +279,7 @@ class DesignCreateAndLifecycleApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def tearDownModule():
+    cleanup_client_user(client)

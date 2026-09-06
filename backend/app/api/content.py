@@ -14,7 +14,9 @@ from app.content.generation.engine import (
     get_content_generation_engine,
 )
 from app.content.generation.models import ContentGenerationOptions
+from app.core.auth import get_current_user
 from app.database.session import get_db
+from app.models.user import User
 from app.schemas.content_draft import ContentDraftCreate, ContentDraftResponse, ContentDraftUpdate
 from app.schemas.content_generation import ContentGenerationRequest, ContentGenerationResponse
 from app.services import content_service, guest_service
@@ -45,6 +47,7 @@ async def generate_content(
     request: ContentGenerationRequest,
     db: Session = Depends(get_db),
     engine: ContentGenerationEngine = Depends(_resolve_engine),
+    current_user: User = Depends(get_current_user),
 ) -> ContentGenerationResponse:
     """Preview only - does NOT persist anything. Use POST
     /api/guests/{guest_id}/content to save the draft the user reviews from
@@ -56,6 +59,7 @@ async def generate_content(
         custom_instructions=request.custom_instructions,
     )
     try:
+        guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
         result = await engine.generate_content(guest_id, db, options)
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
@@ -87,53 +91,80 @@ async def generate_content(
 
 @router.post("", response_model=ContentDraftResponse, status_code=status.HTTP_201_CREATED)
 def create_content(
-    guest_id: uuid.UUID, draft_in: ContentDraftCreate, db: Session = Depends(get_db)
+    guest_id: uuid.UUID,
+    draft_in: ContentDraftCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> ContentDraftResponse:
     try:
+        guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
         return content_service.create_content_draft(db, guest_id, draft_in)
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @router.get("", response_model=list[ContentDraftResponse])
-def list_content(guest_id: uuid.UUID, db: Session = Depends(get_db)) -> list[ContentDraftResponse]:
+def list_content(
+    guest_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[ContentDraftResponse]:
     try:
+        guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
         return content_service.get_content_drafts(db, guest_id)
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @detail_router.get("/{content_id}", response_model=ContentDraftResponse)
-def get_content(content_id: uuid.UUID, db: Session = Depends(get_db)) -> ContentDraftResponse:
+def get_content(
+    content_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ContentDraftResponse:
     try:
-        return content_service.get_content_draft_by_id(db, content_id)
+        return content_service.get_content_draft_by_id_for_user(db, content_id, current_user.id)
     except content_service.ContentDraftNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @detail_router.patch("/{content_id}", response_model=ContentDraftResponse)
 def update_content(
-    content_id: uuid.UUID, draft_in: ContentDraftUpdate, db: Session = Depends(get_db)
+    content_id: uuid.UUID,
+    draft_in: ContentDraftUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> ContentDraftResponse:
     try:
+        content_service.get_content_draft_by_id_for_user(db, content_id, current_user.id)
         return content_service.update_content_draft(db, content_id, draft_in)
     except content_service.ContentDraftNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @detail_router.delete("/{content_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_content(content_id: uuid.UUID, db: Session = Depends(get_db)) -> None:
+def delete_content(
+    content_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
     try:
+        content_service.get_content_draft_by_id_for_user(db, content_id, current_user.id)
         content_service.delete_content_draft(db, content_id)
     except content_service.ContentDraftNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @detail_router.post("/{content_id}/approve", response_model=ContentDraftResponse)
-def approve_content(content_id: uuid.UUID, db: Session = Depends(get_db)) -> ContentDraftResponse:
+def approve_content(
+    content_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ContentDraftResponse:
     """No publishing/handoff side effect - purely a local status flip so
     Design (a future phase) can later filter on approved content."""
     try:
+        content_service.get_content_draft_by_id_for_user(db, content_id, current_user.id)
         return content_service.approve_content_draft(db, content_id)
     except content_service.ContentDraftNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

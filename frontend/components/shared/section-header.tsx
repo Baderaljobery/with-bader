@@ -11,7 +11,7 @@ type SectionHeaderProps = {
  * Questions, Interview, Notebook) - deliberately smaller than PageHeader
  * (text-lg, not text-2xl) since the guest's own name is already the real
  * page title above the tabs. Matches the sizing ResearchHeader already
- * used before this component existed (see features/research/components/
+ * used before this component existed (see services/research/components/
  * research-header.tsx), extracted here so Questions/Interview stop
  * rendering a PageHeader-sized title that outsizes the guest name.
  */

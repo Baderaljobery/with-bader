@@ -54,6 +54,15 @@ def get_question_by_id(db: Session, question_id: uuid.UUID) -> Question:
     return question
 
 
+def get_question_by_id_for_user(db: Session, question_id: uuid.UUID, user_id: uuid.UUID) -> Question:
+    """Ownership check for the direct /api/questions/{question_id} routes -
+    see guest_service.get_guest_by_id_for_user for the same pattern."""
+    question = get_question_by_id(db, question_id)
+    if question.guest.created_by != user_id:
+        raise QuestionNotFoundError(f"Question '{question_id}' not found")
+    return question
+
+
 def update_question(db: Session, question_id: uuid.UUID, question_in: QuestionUpdate) -> Question:
     question = get_question_by_id(db, question_id)
 

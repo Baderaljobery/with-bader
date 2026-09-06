@@ -6,15 +6,15 @@ import { toast } from "sonner";
 
 import { ErrorState } from "@/components/shared/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGuest } from "@/features/guests/hooks/use-guest";
-import { ResearchContent } from "@/features/research/components/research-content";
-import { ResearchEmptyState } from "@/features/research/components/research-empty-state";
-import { ResearchHeader } from "@/features/research/components/research-header";
-import { ResearchLoadingState } from "@/features/research/components/research-loading-state";
-import { useGuestResearch } from "@/features/research/hooks/use-guest-research";
-import { useLatestGuestResearch } from "@/features/research/hooks/use-latest-guest-research";
-import { useRunGuestResearch } from "@/features/research/hooks/use-run-guest-research";
-import type { GuestResearchRunResponse } from "@/features/research/types/research";
+import { useGuest } from "@/services/guests/hooks/use-guest";
+import { ResearchContent } from "@/services/research/components/research-content";
+import { ResearchEmptyState } from "@/services/research/components/research-empty-state";
+import { ResearchHeader } from "@/services/research/components/research-header";
+import { ResearchLoadingState } from "@/services/research/components/research-loading-state";
+import { useGuestResearch } from "@/services/research/hooks/use-guest-research";
+import { useLatestGuestResearch } from "@/services/research/hooks/use-latest-guest-research";
+import { useRunGuestResearch } from "@/services/research/hooks/use-run-guest-research";
+import type { GuestResearchRunResponse } from "@/services/research/types/research";
 import { ApiError } from "@/lib/api/client";
 
 export default function GuestResearchPage() {

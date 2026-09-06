@@ -18,8 +18,10 @@ from app.audio.validation import (
     validate_file_size,
     validate_filename_and_content_type,
 )
+from app.core.auth import get_current_user
 from app.core.config import settings
 from app.database.session import get_db
+from app.models.user import User
 from app.interview_intelligence.base import (
     InterviewMatcherConfigurationError,
     InterviewMatcherTimeoutError,
@@ -106,6 +108,7 @@ async def transcribe_interview(
     db: Session = Depends(get_db),
     stt_service: SpeechToTextService = Depends(_resolve_stt_service),
     matcher_service: InterviewIntelligenceService = Depends(_resolve_matcher_service),
+    current_user: User = Depends(get_current_user),
 ) -> GuestInterviewMatchResponse:
     """Audio -> SpeechToTextService -> transcript saved -> answer matching.
 
@@ -115,7 +118,7 @@ async def transcribe_interview(
     question answers are ever persisted.
     """
     try:
-        guest_service.get_guest_by_id(db, guest_id)
+        guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
 
         validate_filename_and_content_type(file.filename, file.content_type)
         max_bytes = settings.stt_max_file_size_mb * 1024 * 1024
@@ -183,8 +186,13 @@ async def transcribe_interview(
 
 
 @router.get("/transcript", response_model=GuestTranscriptResponse)
-def get_transcript(guest_id: uuid.UUID, db: Session = Depends(get_db)) -> GuestTranscriptResponse:
+def get_transcript(
+    guest_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> GuestTranscriptResponse:
     try:
+        guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
         transcript = guest_transcript_service.get_guest_transcript_or_raise(db, guest_id)
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
@@ -195,11 +203,15 @@ def get_transcript(guest_id: uuid.UUID, db: Session = Depends(get_db)) -> GuestT
 
 @router.patch("/transcript", response_model=GuestTranscriptResponse)
 def update_transcript(
-    guest_id: uuid.UUID, request: GuestTranscriptTextUpdate, db: Session = Depends(get_db)
+    guest_id: uuid.UUID,
+    request: GuestTranscriptTextUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> GuestTranscriptResponse:
     """Manual correction only - deliberately does NOT automatically re-run
     answer matching. Call POST /match-answers explicitly afterward."""
     try:
+        guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
         transcript = guest_transcript_service.update_guest_transcript_text(
             db, guest_id, request.text
         )
@@ -215,11 +227,13 @@ async def match_answers(
     guest_id: uuid.UUID,
     db: Session = Depends(get_db),
     matcher_service: InterviewIntelligenceService = Depends(_resolve_matcher_service),
+    current_user: User = Depends(get_current_user),
 ) -> GuestInterviewMatchResponse:
     """Re-run matching against the currently saved transcript + current
     question list, without re-uploading audio. Manual answers are never
     overwritten; ai_extracted answers may be refreshed."""
     try:
+        guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
         transcript = guest_transcript_service.get_guest_transcript_or_raise(db, guest_id)
         outcomes = await matcher_service.match_and_apply(db, guest_id, transcript.text_)
     except guest_service.GuestNotFoundError as exc:

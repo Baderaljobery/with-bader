@@ -3,7 +3,9 @@ import uuid
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_user
 from app.database.session import get_db
+from app.models.user import User
 from app.questions.improvement.base import (
     QuestionImprovementError,
     QuestionImprover,
@@ -79,11 +81,12 @@ async def improve_question(
     request: QuestionImprovementRequest = Body(default_factory=QuestionImprovementRequest),
     db: Session = Depends(get_db),
     improver: QuestionImprover = Depends(_resolve_improver),
+    current_user: User = Depends(get_current_user),
 ) -> QuestionImprovementPreviewResponse:
     """Preview only - never modifies the question or creates a QuestionVersion.
     Use /improve/accept to apply the (possibly edited) improved text."""
     try:
-        question = question_service.get_question_by_id(db, question_id)
+        question = question_service.get_question_by_id_for_user(db, question_id, current_user.id)
     except question_service.QuestionNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
@@ -117,8 +120,10 @@ def accept_improvement(
     question_id: uuid.UUID,
     request: QuestionImprovementAcceptRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> QuestionResponse:
     try:
+        question_service.get_question_by_id_for_user(db, question_id, current_user.id)
         return accept_question_improvement(db, question_id, request.improved_text)
     except question_service.QuestionNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

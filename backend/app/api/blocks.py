@@ -3,7 +3,9 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_user
 from app.database.session import get_db
+from app.models.user import User
 from app.schemas.block import BlockCreate, BlockResponse, BlockUpdate
 from app.services import block_service, guest_service, notebook_page_service, question_service
 
@@ -13,11 +15,16 @@ guest_blocks_router = APIRouter(prefix="/api/guests/{guest_id}/notebook-blocks",
 
 
 @guest_blocks_router.get("", response_model=list[BlockResponse])
-def list_guest_notebook_blocks(guest_id: uuid.UUID, db: Session = Depends(get_db)) -> list[BlockResponse]:
+def list_guest_notebook_blocks(
+    guest_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[BlockResponse]:
     """Text-like notebook blocks across all of this guest's notebooks - the
     Design Engine's supporting-content picker (Part 6 of the Design Engine
     rework) lists these so the user can explicitly select some."""
     try:
+        guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
         return block_service.get_text_blocks_for_guest(db, guest_id)
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
@@ -25,9 +32,13 @@ def list_guest_notebook_blocks(guest_id: uuid.UUID, db: Session = Depends(get_db
 
 @router.post("", response_model=BlockResponse, status_code=status.HTTP_201_CREATED)
 def create_block(
-    page_id: uuid.UUID, block_in: BlockCreate, db: Session = Depends(get_db)
+    page_id: uuid.UUID,
+    block_in: BlockCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> BlockResponse:
     try:
+        notebook_page_service.get_notebook_page_by_id_for_user(db, page_id, current_user.id)
         return block_service.create_block(db, page_id, block_in)
     except notebook_page_service.NotebookPageNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
@@ -36,26 +47,39 @@ def create_block(
 
 
 @router.get("", response_model=list[BlockResponse])
-def list_blocks(page_id: uuid.UUID, db: Session = Depends(get_db)) -> list[BlockResponse]:
+def list_blocks(
+    page_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[BlockResponse]:
     try:
+        notebook_page_service.get_notebook_page_by_id_for_user(db, page_id, current_user.id)
         return block_service.get_blocks(db, page_id)
     except notebook_page_service.NotebookPageNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @detail_router.get("/{block_id}", response_model=BlockResponse)
-def get_block(block_id: uuid.UUID, db: Session = Depends(get_db)) -> BlockResponse:
+def get_block(
+    block_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> BlockResponse:
     try:
-        return block_service.get_block_by_id(db, block_id)
+        return block_service.get_block_by_id_for_user(db, block_id, current_user.id)
     except block_service.BlockNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @detail_router.patch("/{block_id}", response_model=BlockResponse)
 def update_block(
-    block_id: uuid.UUID, block_in: BlockUpdate, db: Session = Depends(get_db)
+    block_id: uuid.UUID,
+    block_in: BlockUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> BlockResponse:
     try:
+        block_service.get_block_by_id_for_user(db, block_id, current_user.id)
         return block_service.update_block(db, block_id, block_in)
     except block_service.BlockNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
@@ -64,8 +88,13 @@ def update_block(
 
 
 @detail_router.delete("/{block_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_block(block_id: uuid.UUID, db: Session = Depends(get_db)) -> None:
+def delete_block(
+    block_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
     try:
+        block_service.get_block_by_id_for_user(db, block_id, current_user.id)
         block_service.delete_block(db, block_id)
     except block_service.BlockNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

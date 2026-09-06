@@ -1,8 +1,6 @@
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from fastapi.testclient import TestClient
-
 from app.api.question_improvement import _resolve_improver
 from app.database.session import SessionLocal
 from app.main import app
@@ -12,7 +10,9 @@ from app.schemas.question import QuestionCreate
 from app.services import question_service, question_version_service
 from app.services.guest_service import create_guest, delete_guest
 
-client = TestClient(app)
+from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
+
+client = make_authenticated_client()
 
 
 def _override_with_mock_improver():
@@ -26,7 +26,7 @@ def _clear_overrides():
 class QuestionImprovementPreviewApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Improve API Test Guest"))
+        self.guest = create_guest(self.db, GuestCreate(name="Improve API Test Guest"), created_by=client.user_id)
         self.question = question_service.create_question(
             self.db, self.guest.id, QuestionCreate(text="What was your biggest challenge?")
         )
@@ -111,7 +111,7 @@ class QuestionImprovementPreviewApiTests(unittest.TestCase):
 class QuestionImprovementAcceptApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Improve Accept API Test Guest"))
+        self.guest = create_guest(self.db, GuestCreate(name="Improve Accept API Test Guest"), created_by=client.user_id)
 
     def tearDown(self):
         delete_guest(self.db, self.guest.id)
@@ -174,3 +174,7 @@ class QuestionImprovementAcceptApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def tearDownModule():
+    cleanup_client_user(client)

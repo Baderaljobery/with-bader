@@ -3,15 +3,17 @@
 import { Users } from "lucide-react";
 import { useState } from "react";
 
-import { GuestFormDialog } from "@/features/guests/components/guest-form-dialog";
-import { GuestGrid } from "@/features/guests/components/guest-grid";
-import { useGuests } from "@/features/guests/hooks/use-guests";
+import { GuestFormDialog } from "@/services/guests/components/guest-form-dialog";
+import { GuestGrid } from "@/services/guests/components/guest-grid";
+import { useGuests } from "@/services/guests/hooks/use-guests";
+import { useCurrentUser } from "@/services/auth/hooks/use-current-user";
 
 export default function HomePage() {
   const [addOpen, setAddOpen] = useState(false);
   // Shares the "guests" query cache with GuestGrid (same query key) - no
   // extra network request, just a real count for the hero chip below.
   const { data: guests } = useGuests();
+  const { data: user } = useCurrentUser();
 
   return (
     <div className="space-y-8">
@@ -31,10 +33,10 @@ export default function HomePage() {
           <div className="space-y-2.5">
             <p className="text-sm font-medium text-[#1B8FEA]">مساحة العمل</p>
             <h1 className="font-heading text-4xl font-light tracking-tight text-foreground">
-              مرحبًا <span className="font-bold">بدر</span> 👋
+              مرحبًا <span className="font-bold">{user?.name ?? ""}</span> 👋
             </h1>
             <p className="max-w-md text-[15px] leading-relaxed text-muted-foreground">
-              إدارة الضيوف والمقابلات في مكان واحد.
+              إصنع محتواك ومقابلاتك في مكان واحد.
             </p>
           </div>
 

@@ -6,12 +6,12 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { AudioUploadCard } from "@/features/text-extract/components/audio-upload-card";
-import { TranscriptionLoadingState } from "@/features/text-extract/components/transcription-loading-state";
-import { TranscriptionResultCard } from "@/features/text-extract/components/transcription-result-card";
-import { useAudioTextExtract } from "@/features/text-extract/hooks/use-audio-text-extract";
-import { mapTextExtractError } from "@/features/text-extract/lib/error-messages";
-import type { TranscriptionResponse } from "@/features/text-extract/types/transcription";
+import { AudioUploadCard } from "@/services/text-extract/components/audio-upload-card";
+import { TranscriptionLoadingState } from "@/services/text-extract/components/transcription-loading-state";
+import { TranscriptionResultCard } from "@/services/text-extract/components/transcription-result-card";
+import { useAudioTextExtract } from "@/services/text-extract/hooks/use-audio-text-extract";
+import { mapTextExtractError } from "@/services/text-extract/lib/error-messages";
+import type { TranscriptionResponse } from "@/services/text-extract/types/transcription";
 
 // A faint hairline grid, contained within the hero panel below - the same
 // "soft premium background" mood as the reference composition, reinterpreted

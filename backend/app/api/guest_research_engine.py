@@ -3,7 +3,9 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_user
 from app.database.session import get_db
+from app.models.user import User
 from app.research.extraction.base import (
     ResearchExtractionError,
     ResearchExtractorConfigurationError,
@@ -46,8 +48,10 @@ async def run_guest_research(
     guest_id: uuid.UUID,
     db: Session = Depends(get_db),
     engine: ResearchEngine = Depends(_resolve_research_engine),
+    current_user: User = Depends(get_current_user),
 ) -> GuestResearchRunResponse:
     try:
+        guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
         result = await engine.run_guest_research(guest_id, db)
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

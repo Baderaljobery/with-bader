@@ -14,6 +14,11 @@ from app.design_planning.models import SlideRole
 
 ContentLimits = dict[str, int | None]
 
+# The 4 known template ids - single source of truth (previously duplicated
+# in the now-deleted app/design_generation/templates.py, which existed
+# only to load reference images for the retired AI image-generation path).
+# Anything validating a template_id (see app/schemas/design_generation.py)
+# imports TEMPLATE_IDS from here.
 _TEMPLATE_CONTENT_LIMITS: dict[str, dict[SlideRole, ContentLimits]] = {
     "template-01": {
         "cover": {"headline_max_chars": 60, "body_max_chars": 70, "max_points": None},
@@ -48,6 +53,9 @@ _TEMPLATE_CONTENT_LIMITS: dict[str, dict[SlideRole, ContentLimits]] = {
         "closing": {"headline_max_chars": 22, "body_max_chars": 20, "max_points": None},
     },
 }
+
+
+TEMPLATE_IDS: tuple[str, ...] = tuple(_TEMPLATE_CONTENT_LIMITS.keys())
 
 
 def get_content_limits(template_id: str, role: SlideRole) -> ContentLimits | None:

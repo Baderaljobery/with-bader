@@ -1,7 +1,5 @@
 import unittest
 
-from fastapi.testclient import TestClient
-
 from app.database.session import SessionLocal
 from app.main import app
 from app.schemas.block import BlockCreate
@@ -11,13 +9,15 @@ from app.schemas.notebook_page import NotebookPageCreate
 from app.services import block_service, notebook_page_service, notebook_service
 from app.services.guest_service import create_guest, delete_guest
 
-client = TestClient(app)
+from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
+
+client = make_authenticated_client()
 
 
 class GuestNotebookBlocksTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Guest Notebook Blocks Test Guest"))
+        self.guest = create_guest(self.db, GuestCreate(name="Guest Notebook Blocks Test Guest"), created_by=client.user_id)
         self.notebook = notebook_service.create_notebook(self.db, self.guest.id, NotebookCreate(title="N"))
         self.page = notebook_page_service.create_notebook_page(
             self.db, self.notebook.id, NotebookPageCreate(title="P", position=0)
@@ -47,7 +47,7 @@ class GuestNotebookBlocksTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_blocks_from_other_guests_are_excluded(self):
-        other_guest = create_guest(self.db, GuestCreate(name="Other Guest"))
+        other_guest = create_guest(self.db, GuestCreate(name="Other Guest"), created_by=client.user_id)
         try:
             other_notebook = notebook_service.create_notebook(self.db, other_guest.id, NotebookCreate(title="N2"))
             other_page = notebook_page_service.create_notebook_page(
@@ -64,3 +64,7 @@ class GuestNotebookBlocksTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def tearDownModule():
+    cleanup_client_user(client)

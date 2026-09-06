@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from app.design_generation.templates import TEMPLATE_IDS
+from app.design_planning.content_limits import TEMPLATE_IDS
 from app.schemas.design_draft import HEX_COLOR_PATTERN, DesignAspectRatio, DesignPlatform
 from app.schemas.design_slide import SlideRole
 
@@ -106,10 +106,3 @@ class DesignCreateRequest(BaseModel):
     def _check_slides_match_count(self) -> "DesignCreateRequest":
         _validate_slide_indices(self.slide_count, [item.index for item in self.slides])
         return self
-
-
-class SlideRegenerateRequest(BaseModel):
-    """Regenerates ONE slide's image only - text, other slides, template,
-    and colors are all untouched (see app/services/design_service.py)."""
-
-    custom_instructions: str | None = Field(default=None, max_length=1000)

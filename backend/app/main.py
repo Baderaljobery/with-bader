@@ -3,9 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api.assets import router as assets_router
+from app.api.auth import router as auth_router
 from app.api.blocks import detail_router as blocks_detail_router
 from app.api.blocks import guest_blocks_router
 from app.api.blocks import router as blocks_router
+from app.api.calendar import router as calendar_router
 from app.api.content import detail_router as content_detail_router
 from app.api.content import router as content_router
 from app.api.design import detail_router as design_detail_router
@@ -27,14 +29,16 @@ from app.api.question_versions import detail_router as question_version_detail_r
 from app.api.question_versions import router as question_versions_router
 from app.api.questions import detail_router as questions_detail_router
 from app.api.questions import router as questions_router
+from app.api.statistics import router as statistics_router
 from app.api.text_extract import router as text_extract_router
 from app.design_generation.storage import MEDIA_URL_PREFIX, STORAGE_DIR
 
 app = FastAPI(title="With Bader API")
 
-# Local-dev-only CORS: the frontend (Next.js) runs on a different origin
-# than the backend, so browser requests need this to succeed. Explicit
-# origin allowlist, no "*", since credentials are not used here anyway.
+# The frontend (Next.js) runs on a different origin than the backend, so
+# browser requests need this to succeed. Explicit origin allowlist, never
+# "*" - required anyway since allow_credentials=True (the session cookie)
+# is not permitted alongside a wildcard origin by the CORS spec.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -46,7 +50,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 app.include_router(guests_router)
+app.include_router(calendar_router)
 app.include_router(guest_interview_router)
 app.include_router(guest_links_router)
 app.include_router(guest_link_detail_router)
@@ -72,6 +78,7 @@ app.include_router(content_router)
 app.include_router(content_detail_router)
 app.include_router(design_router)
 app.include_router(design_detail_router)
+app.include_router(statistics_router)
 
 # Serves generated design images back out from local disk (see
 # app/design_generation/storage.py) - the directory must exist before

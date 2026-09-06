@@ -1,5 +1,6 @@
 import { Brand } from "./brand";
 import { SidebarNav } from "./sidebar-nav";
+import { SidebarUser } from "./sidebar-user";
 
 /**
  * Desktop right sidebar. Always the LAST child of the (dir="ltr") shell row
@@ -19,6 +20,9 @@ export function Sidebar() {
       </div>
       <div className="mt-4 flex-1">
         <SidebarNav />
+      </div>
+      <div className="border-t border-[#E6EAF0] pt-4">
+        <SidebarUser />
       </div>
     </aside>
   );

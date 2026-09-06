@@ -6,10 +6,10 @@ import { useState } from "react";
 
 import { SectionHeader } from "@/components/shared/section-header";
 import { Button } from "@/components/ui/button";
-import { ContentDraftsList } from "@/features/content/components/content-drafts-list";
-import { ContentEditor, type EditorDraft } from "@/features/content/components/content-editor";
-import { GenerationForm, type GeneratedFrom } from "@/features/content/components/generation-form";
-import type { ContentDraft, ContentGenerationResponse } from "@/features/content/types/content";
+import { ContentDraftsList } from "@/services/content/components/content-drafts-list";
+import { ContentEditor, type EditorDraft } from "@/services/content/components/content-editor";
+import { GenerationForm, type GeneratedFrom } from "@/services/content/components/generation-form";
+import type { ContentDraft, ContentGenerationResponse } from "@/services/content/types/content";
 
 type Mode =
   | { view: "list" }

@@ -3,8 +3,6 @@ import io
 import unittest
 from unittest.mock import AsyncMock
 
-from fastapi.testclient import TestClient
-
 from app.api.text_extract import _resolve_service, extract_text_from_audio
 from app.audio.base import (
     STTProviderError,
@@ -13,8 +11,9 @@ from app.audio.base import (
 from app.audio.models import TranscriptionResult
 from app.audio.service import SpeechToTextService
 from app.main import app
+from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
 
-client = TestClient(app)
+client = make_authenticated_client()
 
 _WAV_HEADER = b"RIFF\x00\x00\x00\x00WAVEfmt "
 
@@ -74,7 +73,7 @@ class TextExtractApiTests(unittest.TestCase):
         sig = inspect.signature(extract_text_from_audio)
         self.assertNotIn("language", sig.parameters)
         self.assertNotIn("prompt", sig.parameters)
-        self.assertEqual(set(sig.parameters), {"file", "service"})
+        self.assertEqual(set(sig.parameters), {"file", "service", "current_user"})
 
     def test_valid_wav_accepted(self):
         _override_with_fake_provider(
@@ -209,33 +208,36 @@ class TextExtractApiTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            set(response.json().keys()), {"text", "provider", "model", "language", "duration_seconds"}
+            set(response.json().keys()),
+            {"text", "provider", "model", "language", "duration_seconds", "chunked", "chunk_count"},
         )
 
 
 class NoDiskPersistenceStructuralTests(unittest.TestCase):
-    """The design intentionally never writes audio to disk at all (Cohere's
-    SDK accepts bytes directly) - stronger than 'delete after use'. These
-    tests prove that by inspecting the actual source rather than the
-    filesystem, per the task's own allowance for this design choice."""
+    """The direct-upload path (files at or under stt_direct_max_bytes,
+    still the overwhelming majority of uploads) never writes audio to disk
+    at all - Groq's SDK accepts bytes directly, same as Cohere's did.
+    Only files that exceed the direct limit legitimately touch disk, and
+    only inside a unique temp directory that is always deleted afterward
+    (see test_stt_service_chunking.py for that guarantee) - never here, in
+    the modules these tests check."""
 
-    def test_no_tempfile_module_used_anywhere_in_audio_pipeline(self):
+    def test_no_tempfile_module_used_on_the_direct_upload_path(self):
         import app.api.text_extract as text_extract_module
-        import app.audio.providers.cohere as cohere_module
-        import app.audio.service as service_module
+        import app.audio.providers.groq as groq_module
         import app.audio.validation as validation_module
 
-        for module in (text_extract_module, cohere_module, service_module, validation_module):
+        for module in (text_extract_module, groq_module, validation_module):
             source = inspect.getsource(module)
             self.assertNotIn("tempfile", source)
             self.assertNotIn("NamedTemporaryFile", source)
 
-    def test_no_disk_write_calls_in_audio_pipeline(self):
+    def test_no_disk_write_calls_on_the_direct_upload_path(self):
         import app.api.text_extract as text_extract_module
-        import app.audio.providers.cohere as cohere_module
+        import app.audio.providers.groq as groq_module
         import app.audio.validation as validation_module
 
-        for module in (text_extract_module, cohere_module, validation_module):
+        for module in (text_extract_module, groq_module, validation_module):
             source = inspect.getsource(module)
             self.assertNotIn('open(', source)
 
@@ -321,3 +323,7 @@ class UploadCleanupTests(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def tearDownModule():
+    cleanup_client_user(client)

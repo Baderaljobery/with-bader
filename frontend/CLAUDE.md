@@ -13,5 +13,5 @@ correct for this specific brand.
 
 ## Layout
 - RTL by default (`dir="rtl"`), sidebar on the right.
-- Match existing patterns in `app/`, `components/`, and `features/` before
+- Match existing patterns in `app/`, `components/`, and `services/` before
   introducing new conventions.

@@ -1,7 +1,5 @@
 import unittest
 
-from fastapi.testclient import TestClient
-
 from app.api.question_generation import _resolve_engine
 from app.database.session import SessionLocal
 from app.main import app
@@ -14,7 +12,9 @@ from app.schemas.question import QuestionCreate
 from app.services import guest_research_service, question_service
 from app.services.guest_service import create_guest, delete_guest
 
-client = TestClient(app)
+from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
+
+client = make_authenticated_client()
 
 
 def _override_with_mock_engine():
@@ -31,7 +31,9 @@ class QuestionGenerationApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
         self.guest = create_guest(
-            self.db, GuestCreate(name="API Test Guest", job_title="CEO", company="Example Co")
+            self.db,
+            GuestCreate(name="API Test Guest", job_title="CEO", company="Example Co"),
+            created_by=client.user_id,
         )
         _override_with_mock_engine()
 
@@ -86,7 +88,7 @@ class QuestionGenerationApiTests(unittest.TestCase):
 class QuestionGenerationSaveApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Save Test Guest"))
+        self.guest = create_guest(self.db, GuestCreate(name="Save Test Guest"), created_by=client.user_id)
 
     def tearDown(self):
         delete_guest(self.db, self.guest.id)
@@ -154,3 +156,7 @@ class QuestionGenerationSaveApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def tearDownModule():
+    cleanup_client_user(client)

@@ -58,6 +58,13 @@ def get_block_by_id(db: Session, block_id: uuid.UUID) -> Block:
     return block
 
 
+def get_block_by_id_for_user(db: Session, block_id: uuid.UUID, user_id: uuid.UUID) -> Block:
+    block = get_block_by_id(db, block_id)
+    if block.page.notebook.guest.created_by != user_id:
+        raise BlockNotFoundError(f"Block '{block_id}' not found")
+    return block
+
+
 def update_block(db: Session, block_id: uuid.UUID, block_in: BlockUpdate) -> Block:
     block = get_block_by_id(db, block_id)
 

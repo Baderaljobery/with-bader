@@ -6,13 +6,13 @@ import { useState } from "react";
 
 import { SectionHeader } from "@/components/shared/section-header";
 import { Button } from "@/components/ui/button";
-import { GenerationDialog } from "@/features/questions/components/generation/generation-dialog";
-import { GenerationPreviewSheet } from "@/features/questions/components/generation/generation-preview-sheet";
-import { ImproveQuestionDialog } from "@/features/questions/components/improvement/improve-question-dialog";
-import { QuestionFormDialog } from "@/features/questions/components/question-form-dialog";
-import { QuestionList } from "@/features/questions/components/question-list";
-import { QuestionVersionHistorySheet } from "@/features/questions/components/question-version-history-sheet";
-import type { Question, QuestionGenerationResponse } from "@/features/questions/types/question";
+import { GenerationDialog } from "@/services/questions/components/generation/generation-dialog";
+import { GenerationPreviewSheet } from "@/services/questions/components/generation/generation-preview-sheet";
+import { ImproveQuestionDialog } from "@/services/questions/components/improvement/improve-question-dialog";
+import { QuestionFormDialog } from "@/services/questions/components/question-form-dialog";
+import { QuestionList } from "@/services/questions/components/question-list";
+import { QuestionVersionHistorySheet } from "@/services/questions/components/question-version-history-sheet";
+import type { Question, QuestionGenerationResponse } from "@/services/questions/types/question";
 
 export default function GuestQuestionsPage() {
   const { guestId } = useParams<{ guestId: string }>();

@@ -1,19 +1,13 @@
 "use client";
 
-import { Building2, CalendarPlus, Layers, RefreshCw } from "lucide-react";
+import { Building2, CalendarPlus, RefreshCw } from "lucide-react";
 import { useParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGuest } from "@/features/guests/hooks/use-guest";
-
-const CONTENT_STATUS_LABELS: Record<string, string> = {
-  not_started: "لم يبدأ",
-  in_progress: "قيد التنفيذ",
-  review: "قيد المراجعة",
-  published: "منشور",
-};
+import { ContentStatusSelect } from "@/services/guests/components/content-status-select";
+import { useGuest } from "@/services/guests/hooks/use-guest";
 
 function formatDate(value: string) {
   // Fixed locale (not `undefined`/browser locale) so dates render with
@@ -59,11 +53,7 @@ export default function GuestOverviewPage() {
           label="الشركة"
           value={guest.company ?? "—"}
         />
-        <InfoChip
-          icon={Layers}
-          label="حالة المحتوى"
-          value={CONTENT_STATUS_LABELS[guest.content_status] ?? guest.content_status}
-        />
+        <ContentStatusSelect guest={guest} />
         <InfoChip icon={CalendarPlus} label="تاريخ الإضافة" value={formatDate(guest.created_at)} />
         <InfoChip icon={RefreshCw} label="آخر تحديث" value={formatDate(guest.updated_at)} />
       </div>

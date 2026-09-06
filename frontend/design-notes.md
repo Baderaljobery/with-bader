@@ -72,7 +72,7 @@ brand's own type family.
 
 Not part of the default UI. Reserved for large visual headlines: Design
 Engine template headlines, editorial poster-style titles, and selected
-premium content designs (see `frontend/features/design/`). Do not use it
+premium content designs (see `frontend/services/design/`). Do not use it
 for ordinary app UI.
 
 - CSS variable: `--font-thmanyah-serif-display`.
@@ -135,7 +135,7 @@ the same teal/blue pair as **soft ambient glow**, at very low opacity
 ## Design Engine templates (reworked 2026-09-03: deterministic renderers)
 
 The Design Engine is a **template renderer**, not an AI image generator.
-Each of the 4 templates under `frontend/features/design/templates/<id>/`
+Each of the 4 templates under `frontend/services/design/templates/<id>/`
 (`config.ts` + `Renderer.tsx`) is real frontend code that reproduces its
 original reference image's composition/palette/typography by hand — fixed
 background/text colors, fixed Thmanyah font, fixed spacing, one
@@ -143,7 +143,7 @@ background/text colors, fixed Thmanyah font, fixed spacing, one
 (cover/main_content/continuation/quote/quick_points/closing). The same
 template + same text always renders the same pixels (no AI in this path).
 
-- `frontend/features/design/templates/registry.ts` is the single
+- `frontend/services/design/templates/registry.ts` is the single
   authoritative template list (picker metadata + the real `Renderer` +
   `fontFamily` + `supportedAspectRatios` + per-role `contentLimits`) — the
   old split between a picker-only registry and a separate generation-time
@@ -159,13 +159,36 @@ template + same text always renders the same pixels (no AI in this path).
 - AI (Groq, via `backend/app/design_planning/`) only ever writes the
   slide *text*, constrained by that template/role's `contentLimits` (also
   mirrored backend-side in `app/design_planning/content_limits.py` so the
-  planner's prompt gets the real per-slide character budget). The
-  OpenRouter/Gemini full-slide image generator from the original Design
-  Engine v1 still exists (`backend/app/design_generation/`) but is not
-  called anywhere in the normal template flow — see that package's own
-  docstrings if reviving it as a separate legacy/creative path later.
+  planner's prompt gets the real per-slide character budget). The original
+  Design Engine v1's OpenRouter/Gemini full-slide image generator has been
+  removed (2026-09-06 cleanup) — it was already dormant/unreachable from
+  the normal template flow. `backend/app/design_generation/storage.py`
+  still exists in a trimmed form purely to serve/clean up any pre-existing
+  `design_slides.image_path` from before this rework; no code writes a new
+  one anymore.
 - There is no automatic/AI template, slide-count, or role selection
   anywhere in this flow — all three are always an explicit user choice.
+
+## Statistics card tones (added 2026-09-05)
+
+The Statistics dashboard (`frontend/services/statistics/`) introduces a
+small, reusable 4-tone card system for KPI cards - all four derived only
+from colors already in the palette table above, never a new hue:
+
+- `navy` — solid `#0B1F3A` (the wordmark navy), white text, teal accent.
+  Reserved for exactly one "hero" card per screen (the single most
+  important number) - do not use it for more than one card at a time, or
+  it stops reading as an accent.
+- `teal` — a light tint of the gradient's teal end (`#EAFBFA` bg, `#0F766E`
+  text) for one KPI group.
+- `blue` — a light tint of the gradient's blue end (`#EAF4FE` bg, `#155E9E`
+  text) for another KPI group.
+- `neutral` — the standard `#F7F8FA` secondary background, for anything
+  that shouldn't visually compete with the tinted cards.
+
+See `frontend/services/statistics/lib/theme.ts` for the exact values. Use
+this same 4-tone set (not new colors) if another feature ever needs
+several coordinated "stat card" treatments on one screen.
 
 ## Quick checklist before shipping any new screen
 

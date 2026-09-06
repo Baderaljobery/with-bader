@@ -34,6 +34,16 @@ class User(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
+    # passive_deletes=True is required here: without it, SQLAlchemy's ORM
+    # would load this collection on every user delete and issue its own
+    # UPDATE ... SET created_by = NULL for each guest (its default
+    # behavior for a relationship with no delete cascade configured) -
+    # silently overriding and defeating the database's own
+    # ON DELETE CASCADE on guests.created_by (see
+    # database/008_authentication.sql and
+    # app/services/user_service.py's delete_user_account). With
+    # passive_deletes=True, SQLAlchemy leaves child-row handling entirely
+    # to the database's real foreign key behavior.
     guests: Mapped[list["Guest"]] = relationship(
-        back_populates="created_by_user", foreign_keys="Guest.created_by"
+        back_populates="created_by_user", foreign_keys="Guest.created_by", passive_deletes=True
     )

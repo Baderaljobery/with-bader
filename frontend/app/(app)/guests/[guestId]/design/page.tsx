@@ -6,11 +6,11 @@ import { Suspense, useState } from "react";
 
 import { SectionHeader } from "@/components/shared/section-header";
 import { Button } from "@/components/ui/button";
-import { ConfigurationForm, type DesignConfig } from "@/features/design/components/configuration-form";
-import { DesignDraftsList } from "@/features/design/components/design-drafts-list";
-import { MultiSlideEditor } from "@/features/design/components/multi-slide-editor";
-import { StructurePreview } from "@/features/design/components/structure-preview";
-import type { DesignDraft, DesignPlanResponse } from "@/features/design/types/design";
+import { ConfigurationForm, type DesignConfig } from "@/services/design/components/configuration-form";
+import { DesignDraftsList } from "@/services/design/components/design-drafts-list";
+import { MultiSlideEditor } from "@/services/design/components/multi-slide-editor";
+import { StructurePreview } from "@/services/design/components/structure-preview";
+import type { DesignDraft, DesignPlanResponse } from "@/services/design/types/design";
 
 type Mode =
   | { view: "list" }

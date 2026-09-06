@@ -21,10 +21,11 @@ DESIGN_SLIDE_ROLES = (
 class DesignSlide(Base):
     """One slide within a DesignDraft's multi-slide set. role/headline/
     body_text/cta_text are produced by DesignContentPlanner and remain
-    user-editable; image_path/prompt are null until that specific slide's
-    image has been generated (preview-first: text is approved before any
-    Gemini/OpenRouter call is made) - see app/design_planning/ and
-    app/design_generation/."""
+    user-editable. image_path/prompt are legacy columns from the retired
+    OpenRouter/Gemini image-generation path (see
+    app/design_generation/storage.py) - always null for any slide created
+    by the current strict template-renderer flow, which never generates or
+    stores an image server-side."""
 
     __tablename__ = "design_slides"
     __table_args__ = (

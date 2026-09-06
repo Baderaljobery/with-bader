@@ -65,3 +65,12 @@ def get_guest_research_by_id(db: Session, research_id: uuid.UUID) -> GuestResear
     if research is None:
         raise GuestResearchNotFoundError(f"Guest research '{research_id}' not found")
     return research
+
+
+def get_guest_research_by_id_for_user(
+    db: Session, research_id: uuid.UUID, user_id: uuid.UUID
+) -> GuestResearch:
+    research = get_guest_research_by_id(db, research_id)
+    if research.guest.created_by != user_id:
+        raise GuestResearchNotFoundError(f"Guest research '{research_id}' not found")
+    return research

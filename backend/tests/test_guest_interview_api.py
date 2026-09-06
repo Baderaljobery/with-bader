@@ -3,8 +3,6 @@ import json
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from fastapi.testclient import TestClient
-
 from app.api.guest_interview import _resolve_matcher_service, _resolve_stt_service
 from app.audio.models import TranscriptionResult
 from app.audio.service import SpeechToTextService
@@ -23,7 +21,9 @@ from app.schemas.question import QuestionAnswerUpdate, QuestionCreate
 from app.services import question_service
 from app.services.guest_service import create_guest, delete_guest
 
-client = TestClient(app)
+from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
+
+client = make_authenticated_client()
 
 
 class _FakeSTTProvider:
@@ -35,7 +35,7 @@ class _FakeSTTProvider:
 
     async def transcribe(self, audio, options=None):
         return TranscriptionResult(
-            text=self._text, provider="cohere", model="fake-cohere-model", language="ar"
+            text=self._text, provider="groq", model="fake-groq-model", language="ar"
         )
 
 
@@ -66,7 +66,7 @@ def _clear_overrides():
 class TranscribeInterviewApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Interview API Test Guest"))
+        self.guest = create_guest(self.db, GuestCreate(name="Interview API Test Guest"), created_by=client.user_id)
 
     def tearDown(self):
         _clear_overrides()
@@ -98,7 +98,7 @@ class TranscribeInterviewApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         body = response.json()
         self.assertEqual(body["transcript"]["text"], "He said funding was the biggest challenge.")
-        self.assertEqual(body["transcript"]["stt_provider"], "cohere")
+        self.assertEqual(body["transcript"]["stt_provider"], "groq")
         self.assertEqual(len(body["questions"]), 1)
         self.assertEqual(body["questions"][0]["answer_status"], "answered")
         self.assertEqual(body["questions"][0]["answer_source"], "ai_extracted")
@@ -178,7 +178,7 @@ class TranscribeInterviewApiTests(unittest.TestCase):
 class TranscriptApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Transcript API Test Guest"))
+        self.guest = create_guest(self.db, GuestCreate(name="Transcript API Test Guest"), created_by=client.user_id)
 
     def tearDown(self):
         _clear_overrides()
@@ -231,7 +231,7 @@ class TranscriptApiTests(unittest.TestCase):
 class MatchAnswersApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Match Answers API Test Guest"))
+        self.guest = create_guest(self.db, GuestCreate(name="Match Answers API Test Guest"), created_by=client.user_id)
 
     def tearDown(self):
         _clear_overrides()
@@ -277,7 +277,7 @@ class MatchAnswersApiTests(unittest.TestCase):
 class ManualAnswerApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Manual Answer API Test Guest"))
+        self.guest = create_guest(self.db, GuestCreate(name="Manual Answer API Test Guest"), created_by=client.user_id)
         self.question = question_service.create_question(
             self.db, self.guest.id, QuestionCreate(text="A question?")
         )
@@ -334,7 +334,7 @@ class MatcherMetadataApiTests(unittest.TestCase):
 
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Matcher Metadata API Test Guest"))
+        self.guest = create_guest(self.db, GuestCreate(name="Matcher Metadata API Test Guest"), created_by=client.user_id)
         app.dependency_overrides[_resolve_stt_service] = lambda: SpeechToTextService(
             provider=_FakeSTTProvider(text="hello")
         )
@@ -404,3 +404,7 @@ class MatcherMetadataApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def tearDownModule():
+    cleanup_client_user(client)

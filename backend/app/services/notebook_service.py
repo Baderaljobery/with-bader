@@ -38,6 +38,13 @@ def get_notebook_by_id(db: Session, notebook_id: uuid.UUID) -> Notebook:
     return notebook
 
 
+def get_notebook_by_id_for_user(db: Session, notebook_id: uuid.UUID, user_id: uuid.UUID) -> Notebook:
+    notebook = get_notebook_by_id(db, notebook_id)
+    if notebook.guest.created_by != user_id:
+        raise NotebookNotFoundError(f"Notebook '{notebook_id}' not found")
+    return notebook
+
+
 def update_notebook(db: Session, notebook_id: uuid.UUID, notebook_in: NotebookUpdate) -> Notebook:
     notebook = get_notebook_by_id(db, notebook_id)
 

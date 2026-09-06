@@ -32,8 +32,9 @@ class TranscriptionSegment(BaseModel):
 class TranscriptionResult(BaseModel):
     """The ONLY shape any application code should depend on. A provider
     that returns richer data (segments, duration, detected language) may
-    populate those fields; a provider that doesn't (like Cohere today)
-    leaves them None - never guessed or invented."""
+    populate those fields; a provider that doesn't (like Groq's default
+    "json" response_format today) leaves them None - never guessed or
+    invented."""
 
     text: str
     language: str | None = None

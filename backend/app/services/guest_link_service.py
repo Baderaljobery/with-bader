@@ -40,6 +40,13 @@ def get_guest_link_by_id(db: Session, link_id: uuid.UUID) -> GuestLink:
     return link
 
 
+def get_guest_link_by_id_for_user(db: Session, link_id: uuid.UUID, user_id: uuid.UUID) -> GuestLink:
+    link = get_guest_link_by_id(db, link_id)
+    if link.guest.created_by != user_id:
+        raise GuestLinkNotFoundError(f"Guest link '{link_id}' not found")
+    return link
+
+
 def update_guest_link(db: Session, link_id: uuid.UUID, link_in: GuestLinkUpdate) -> GuestLink:
     link = get_guest_link_by_id(db, link_id)
 

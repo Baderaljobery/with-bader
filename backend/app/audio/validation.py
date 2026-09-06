@@ -3,7 +3,21 @@ from typing import Protocol
 from app.audio.base import STTFileTooLargeError, STTUnsupportedFormatError, STTValidationError
 from app.core.config import settings
 
-_DEFAULT_ALLOWED_EXTENSIONS = (".mp3", ".wav", ".flac", ".ogg", ".m4a")
+
+# Matches Groq's officially supported speech-to-text formats exactly
+# (console.groq.com/docs/speech-to-text, verified 2026-09-06):
+# flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm.
+_DEFAULT_ALLOWED_EXTENSIONS = (
+    ".flac",
+    ".mp3",
+    ".mp4",
+    ".mpeg",
+    ".mpga",
+    ".m4a",
+    ".ogg",
+    ".wav",
+    ".webm",
+)
 
 _ALLOWED_CONTENT_TYPES = (
     "audio/mpeg",
@@ -17,6 +31,9 @@ _ALLOWED_CONTENT_TYPES = (
     "audio/mp4",
     "audio/x-m4a",
     "audio/m4a",
+    "audio/webm",
+    "video/mp4",
+    "video/webm",
 )
 
 # Generic/placeholder content-types many clients send when they don't know

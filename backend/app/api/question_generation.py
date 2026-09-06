@@ -3,7 +3,9 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_user
 from app.database.session import get_db
+from app.models.user import User
 from app.questions.generation.base import (
     QuestionGenerationError,
     QuestionGeneratorConfigurationError,
@@ -51,6 +53,7 @@ async def generate_questions(
     request: QuestionGenerationRequest,
     db: Session = Depends(get_db),
     engine: QuestionGenerationEngine = Depends(_resolve_engine),
+    current_user: User = Depends(get_current_user),
 ) -> QuestionGenerationResponse:
     """Preview only - does NOT persist anything. Use /generated/save to
     store the questions the user selects from this preview."""
@@ -62,6 +65,7 @@ async def generate_questions(
         topics=request.topics,
     )
     try:
+        guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
         result = await engine.generate_questions(guest_id, db, options)
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
@@ -109,8 +113,10 @@ def save_generated(
     guest_id: uuid.UUID,
     request: QuestionGenerationSaveRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> QuestionGenerationSaveResponse:
     try:
+        guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
         created = save_generated_questions(db, guest_id, request.questions)
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

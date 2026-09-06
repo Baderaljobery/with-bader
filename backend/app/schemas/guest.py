@@ -12,7 +12,7 @@ PreparationStatus = Literal[
     "interview_completed",
 ]
 
-ContentStatus = Literal["not_started", "in_progress", "review", "published"]
+ContentStatus = Literal["not_started", "in_progress", "published"]
 
 
 class GuestBase(BaseModel):
@@ -25,6 +25,10 @@ class GuestBase(BaseModel):
     research_summary: str | None = None
     preparation_status: PreparationStatus = "not_started"
     content_status: ContentStatus = "not_started"
+    # Calendar feature: at most one scheduled interview per guest. Naive
+    # datetime (no timezone) - see app/models/guest.py.
+    interview_scheduled_at: datetime | None = None
+    interview_location: str | None = None
 
 
 class GuestCreate(GuestBase):
@@ -41,6 +45,13 @@ class GuestUpdate(BaseModel):
     research_summary: str | None = None
     preparation_status: PreparationStatus | None = None
     content_status: ContentStatus | None = None
+    # Setting content_status above always marks it manual. Send
+    # content_status_manual=False on its own (no content_status) to clear
+    # an existing override and let the automatic Calendar-derived rule take
+    # back over - see guest_service.update_guest.
+    content_status_manual: bool | None = None
+    interview_scheduled_at: datetime | None = None
+    interview_location: str | None = None
 
 
 class GuestResponse(GuestBase):
@@ -49,5 +60,6 @@ class GuestResponse(GuestBase):
     id: uuid.UUID
     created_by: uuid.UUID | None = None
     photo_id: uuid.UUID | None = None
+    content_status_manual: bool = False
     created_at: datetime
     updated_at: datetime

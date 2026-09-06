@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, func, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, String, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -19,7 +19,7 @@ class Guest(Base):
             name="guests_preparation_status_check",
         ),
         CheckConstraint(
-            "content_status IN ('not_started', 'in_progress', 'review', 'published')",
+            "content_status IN ('not_started', 'in_progress', 'published')",
             name="guests_content_status_check",
         ),
     )
@@ -51,6 +51,21 @@ class Guest(Base):
     content_status: Mapped[str] = mapped_column(
         String, nullable=False, server_default="not_started"
     )
+    # True once the user has explicitly chosen content_status themselves -
+    # while False, content_status is kept in sync with the automatic
+    # Calendar-derived rule instead (see guest_service.update_guest).
+    content_status_manual: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+
+    # Calendar feature (Part 007): at most one scheduled interview per guest,
+    # no separate events table. Naive timestamp on purpose - this product
+    # has no multi-timezone concept, so the plain wall-clock value entered
+    # by the user is stored and returned as-is, with no UTC conversion.
+    interview_scheduled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=False), nullable=True
+    )
+    interview_location: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

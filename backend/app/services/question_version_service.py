@@ -51,3 +51,12 @@ def get_question_version_by_id(db: Session, version_id: uuid.UUID) -> QuestionVe
     if version is None:
         raise QuestionVersionNotFoundError(f"Question version '{version_id}' not found")
     return version
+
+
+def get_question_version_by_id_for_user(
+    db: Session, version_id: uuid.UUID, user_id: uuid.UUID
+) -> QuestionVersion:
+    version = get_question_version_by_id(db, version_id)
+    if version.question.guest.created_by != user_id:
+        raise QuestionVersionNotFoundError(f"Question version '{version_id}' not found")
+    return version

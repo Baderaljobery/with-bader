@@ -6,6 +6,19 @@ class Settings(BaseSettings):
 
     database_url: str
 
+    environment: str = "development"
+
+    # --- Authentication ---
+    # HS256-signed session token stored as an HttpOnly cookie (see
+    # app/core/security.py, app/core/auth.py) - no session table, no
+    # localStorage/sessionStorage token exposure to browser JS.
+    auth_secret: str
+    auth_cookie_name: str = "with_bader_session"
+    # 14 days - a workspace tool a user opens daily shouldn't demand a
+    # fresh login on every visit; refreshing the page must never log the
+    # user out (Part 50 of the auth rework spec).
+    auth_token_expire_minutes: int = 60 * 24 * 14
+
     research_max_queries: int = 8
     research_results_per_query: int = 5
 
@@ -25,32 +38,71 @@ class Settings(BaseSettings):
     research_extractor_max_source_chars: int = 700
 
     groq_api_key: str | None = None
-    groq_research_model: str = "openai/gpt-oss-20b"
+    groq_research_model: str = "openai/gpt-oss-120b"
     groq_timeout_seconds: float = 30.0
-    groq_max_output_tokens: int = 1800
-    groq_reasoning_effort: str = "low"
+    # Raised from 1800 (2026-09-06, paid-tier upgrade): the reasoning_effort
+    # bump below spends part of this same budget on hidden reasoning tokens
+    # before the model even starts the visible JSON answer, and the larger
+    # 120b models now used by most Groq features produce richer output -
+    # both narrow the previous headroom. 3000 restores comfortable headroom
+    # now that a paid tier's TPM budget is no longer the constraint the old
+    # 1800 value was sized for.
+    groq_max_output_tokens: int = 3000
+    # "low" -> "medium" (2026-09-06): only app/research/extraction/groq.py
+    # currently reads this setting - no other Groq provider class accepts a
+    # reasoning_effort parameter, so this only changes research extraction's
+    # behavior today.
+    groq_reasoning_effort: str = "medium"
 
     question_generator_provider: str = "mock"
-    groq_question_model: str = "openai/gpt-oss-20b"
+    groq_question_model: str = "openai/gpt-oss-120b"
     question_generation_default_count: int = 12
     question_generation_max_count: int = 20
     question_generation_max_research_items: int = 30
     question_generation_max_input_chars: int = 12000
 
     question_improver_provider: str = "mock"
-    groq_question_improvement_model: str = "openai/gpt-oss-20b"
+    groq_question_improvement_model: str = "openai/gpt-oss-120b"
 
-    stt_provider: str = "cohere"
-    stt_max_file_size_mb: int = 25
+    stt_provider: str = "groq"
+    # Overall/absolute cap on what the app will even attempt to process
+    # (2026-09-06, Groq Whisper migration) - distinct from
+    # stt_direct_max_bytes below. A file under this but over the direct
+    # limit is automatically chunked (see app/audio/service.py); a file
+    # over this is rejected outright. 500MB of speech-oriented mono/16kHz
+    # audio is many hours long - comfortably beyond any real interview.
+    stt_max_file_size_mb: int = 500
     stt_timeout_seconds: float = 60.0
     # Comma-separated override, e.g. ".mp3,.wav". Falls back to a built-in
     # default list (see app/audio/validation.py) when unset.
     stt_allowed_extensions: str | None = None
 
-    cohere_api_key: str | None = None
-    cohere_stt_model: str = "cohere-transcribe-arabic-07-2026"
+    # Verified against Groq's official docs (console.groq.com/docs/
+    # speech-to-text) on 2026-09-06: 25MB on the free tier, 100MB on a
+    # paid/dev tier - this project has a paid key, so 100MB is the direct-
+    # upload threshold. A file at or under this goes straight to Groq; a
+    # larger one is chunked first (see app/audio/chunking.py). Configurable
+    # in case Groq's own limit changes or the account tier changes.
+    stt_direct_max_bytes: int = 100 * 1024 * 1024
+    # Time-based chunk length for files over stt_direct_max_bytes. 15
+    # minutes keeps each chunk comfortably under the direct limit even for
+    # higher-bitrate source audio, without creating dozens of tiny chunks
+    # for a typical hour-long interview (~4 chunks).
+    stt_chunk_minutes: int = 15
+
+    groq_stt_model: str = "whisper-large-v3"
+    # This app transcribes Arabic interviews - always pass language
+    # explicitly rather than relying on Whisper's auto-detection (see
+    # app/audio/providers/groq.py).
+    groq_stt_language: str = "ar"
 
     interview_matcher_provider: str = "mock"
+    # Deliberately kept on the smaller model (2026-09-06 review): this is a
+    # bounded, strict-JSON-schema matching task over a fixed question list,
+    # not open-ended generation - low temperature (0.2), no reasoning_effort
+    # even wired in. No evidence surfaced that 20b's quality is the limiting
+    # factor here, so it wasn't upgraded alongside the generation/planning
+    # features.
     groq_interview_matcher_model: str = "openai/gpt-oss-20b"
     # Deliberately lower than a naive "30000" default: empirically, Groq's
     # free/on-demand tier enforces an ~8000 tokens-per-minute budget for
@@ -64,7 +116,7 @@ class Settings(BaseSettings):
     interview_matcher_auto_save_confidence: float = 0.75
 
     content_generator_provider: str = "mock"
-    groq_content_model: str = "openai/gpt-oss-20b"
+    groq_content_model: str = "openai/gpt-oss-120b"
     # Context-building limits, same spirit as question_generation's - keep a
     # single generation request comfortably within Groq's tokens-per-minute
     # budget. The transcript gets its own (smaller) cap since it is only
@@ -77,19 +129,8 @@ class Settings(BaseSettings):
     content_generation_max_transcript_chars: int = 4000
     content_generation_max_input_chars: int = 10000
 
-    openrouter_api_key: str | None = None
-    # "Nano Banana 2" (Gemini 3.1 Flash Image), Google's current fast,
-    # general-purpose native image model, called through OpenRouter rather
-    # than Google's own API directly - Google Cloud's Gemini API free tier
-    # allocates zero quota for image-output models, while OpenRouter bills
-    # per-request against its own credit balance instead.
-    openrouter_image_model: str = "google/gemini-3.1-flash-image"
-    openrouter_timeout_seconds: float = 60.0
-    design_generation_max_body_chars: int = 600
-    design_generation_max_questions: int = 6
-
     slide_planner_provider: str = "mock"
-    groq_slide_planner_model: str = "openai/gpt-oss-20b"
+    groq_slide_planner_model: str = "openai/gpt-oss-120b"
 
 
 settings = Settings()

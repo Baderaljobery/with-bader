@@ -23,8 +23,8 @@ class GroqSlidePlanner(SlidePlanner):
     """Source-grounded, structured multi-slide design-copy planning via
     Groq. Consumes ONLY the guest metadata and the already-selected
     context the caller supplies - no tools, no browsing, no web search.
-    Never touches the image-generation provider (OpenRouter/Gemini) - text
-    planning and visual generation are fully separate AI capabilities.
+    Writes slide text only - the Design Engine renders every slide's visual
+    deterministically on the frontend, no AI image generation involved.
     """
 
     provider_name = "groq"

@@ -42,6 +42,15 @@ def get_content_draft_by_id(db: Session, content_id: uuid.UUID) -> ContentDraft:
     return draft
 
 
+def get_content_draft_by_id_for_user(
+    db: Session, content_id: uuid.UUID, user_id: uuid.UUID
+) -> ContentDraft:
+    draft = get_content_draft_by_id(db, content_id)
+    if draft.guest.created_by != user_id:
+        raise ContentDraftNotFoundError(f"Content draft '{content_id}' not found")
+    return draft
+
+
 def update_content_draft(
     db: Session, content_id: uuid.UUID, draft_in: ContentDraftUpdate
 ) -> ContentDraft:

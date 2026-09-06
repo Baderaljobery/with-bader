@@ -18,11 +18,11 @@ def _to_model_data(data: dict) -> dict:
     return data
 
 
-def create_asset(db: Session, asset_in: AssetCreate) -> Asset:
+def create_asset(db: Session, asset_in: AssetCreate, uploaded_by: uuid.UUID) -> Asset:
     if asset_in.guest_id is not None:
         get_guest_by_id(db, asset_in.guest_id)
 
-    asset = Asset(**_to_model_data(asset_in.model_dump()))
+    asset = Asset(**_to_model_data(asset_in.model_dump()), uploaded_by=uploaded_by)
     db.add(asset)
     db.commit()
     db.refresh(asset)
@@ -30,11 +30,18 @@ def create_asset(db: Session, asset_in: AssetCreate) -> Asset:
 
 
 def get_assets(
-    db: Session, guest_id: uuid.UUID | None = None, asset_type: str | None = None
+    db: Session, uploaded_by: uuid.UUID, guest_id: uuid.UUID | None = None, asset_type: str | None = None
 ) -> list[Asset]:
+    """Always scoped: either to a specific guest (ownership of which the
+    caller has already verified) or, with no guest_id, to the current
+    user's own directly-uploaded assets - never "every asset in the
+    database" (Part 9's "no accidentally public data APIs" applies here
+    too, even though Assets isn't one of the explicitly-named domains)."""
     stmt = select(Asset)
     if guest_id is not None:
         stmt = stmt.where(Asset.guest_id == guest_id)
+    else:
+        stmt = stmt.where(Asset.uploaded_by == uploaded_by)
     if asset_type is not None:
         stmt = stmt.where(Asset.type == asset_type)
     stmt = stmt.order_by(Asset.created_at.desc())
@@ -45,6 +52,15 @@ def get_assets(
 def get_asset_by_id(db: Session, asset_id: uuid.UUID) -> Asset:
     asset = db.get(Asset, asset_id)
     if asset is None:
+        raise AssetNotFoundError(f"Asset '{asset_id}' not found")
+    return asset
+
+
+def get_asset_by_id_for_user(db: Session, asset_id: uuid.UUID, user_id: uuid.UUID) -> Asset:
+    asset = get_asset_by_id(db, asset_id)
+    owns_via_guest = asset.guest_id is not None and asset.guest.created_by == user_id
+    owns_directly = asset.guest_id is None and asset.uploaded_by == user_id
+    if not (owns_via_guest or owns_directly):
         raise AssetNotFoundError(f"Asset '{asset_id}' not found")
     return asset
 

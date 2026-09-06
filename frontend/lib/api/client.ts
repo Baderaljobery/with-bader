@@ -39,6 +39,10 @@ async function request<TResponse>(
       headers: body !== undefined && !isFormData ? { "Content-Type": "application/json" } : undefined,
       body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
       signal: options?.signal,
+      // The backend authenticates via an HttpOnly session cookie (never a
+      // frontend-visible token) - the browser only attaches it cross-origin
+      // (frontend:3000 -> backend:8000) if we ask it to.
+      credentials: "include",
     });
   } catch {
     throw new ApiError(

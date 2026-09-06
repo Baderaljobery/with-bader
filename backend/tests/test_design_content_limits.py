@@ -1,7 +1,6 @@
 import unittest
 
-from app.design_generation.templates import TEMPLATE_IDS
-from app.design_planning.content_limits import get_content_limits
+from app.design_planning.content_limits import TEMPLATE_IDS, get_content_limits
 from app.design_planning.models import PlanContextItem, SlidePlanningOptions, SlideRoleSpec
 from app.design_planning.prompts import build_user_prompt
 from app.models.design_slide import DESIGN_SLIDE_ROLES

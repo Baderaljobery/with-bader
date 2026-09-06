@@ -42,6 +42,15 @@ def get_notebook_page_by_id(db: Session, page_id: uuid.UUID) -> NotebookPage:
     return page
 
 
+def get_notebook_page_by_id_for_user(
+    db: Session, page_id: uuid.UUID, user_id: uuid.UUID
+) -> NotebookPage:
+    page = get_notebook_page_by_id(db, page_id)
+    if page.notebook.guest.created_by != user_id:
+        raise NotebookPageNotFoundError(f"Notebook page '{page_id}' not found")
+    return page
+
+
 def update_notebook_page(
     db: Session, page_id: uuid.UUID, page_in: NotebookPageUpdate
 ) -> NotebookPage:
