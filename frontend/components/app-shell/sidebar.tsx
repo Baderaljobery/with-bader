@@ -21,7 +21,7 @@ export function Sidebar() {
           className="pointer-events-none absolute -top-14 start-1/2 size-44 -translate-x-1/2 rounded-full opacity-90 blur-2xl"
           style={{ backgroundImage: "var(--glow-teal)" }}
         />
-        <div className="relative flex justify-end">
+        <div className="relative flex justify-center">
           <Brand size="nav" className="px-0" />
         </div>
       </div>

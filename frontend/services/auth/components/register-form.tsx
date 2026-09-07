@@ -84,14 +84,14 @@ export function RegisterForm() {
           </Label>
           <div className="relative">
             <User
-              className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
+              className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
               aria-hidden="true"
             />
             <Input
               id="register-name"
               autoComplete="name"
               placeholder="الاسم"
-              className="h-10 pe-9"
+              className="h-10 pr-9 pl-3 text-right"
               aria-invalid={Boolean(fieldErrors.name)}
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -106,16 +106,15 @@ export function RegisterForm() {
           </Label>
           <div className="relative">
             <Mail
-              className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
+              className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
               aria-hidden="true"
             />
             <Input
               id="register-email"
               type="email"
-              dir="ltr"
               autoComplete="email"
               placeholder="البريد الإلكتروني"
-              className="h-10 pe-9 text-end"
+              className="h-10 pr-9 pl-3 text-right"
               aria-invalid={Boolean(fieldErrors.email)}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -130,28 +129,27 @@ export function RegisterForm() {
           </Label>
           <div className="relative">
             <Lock
-              className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
+              className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
               aria-hidden="true"
-            />
-            <Input
-              id="register-password"
-              type={showPassword ? "text" : "password"}
-              dir="ltr"
-              autoComplete="new-password"
-              placeholder="كلمة المرور"
-              className="h-10 ps-9 pe-9 text-end"
-              aria-invalid={Boolean(fieldErrors.password)}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
             />
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
               aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-              className="absolute end-3 top-1/2 -translate-y-1/2 text-[#5F6368] transition-colors hover:text-[#161616]"
+              className="absolute right-9 top-1/2 -translate-y-1/2 text-[#5F6368] transition-colors hover:text-[#161616]"
             >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
+            <Input
+              id="register-password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="كلمة المرور"
+              className="h-10 pr-16 pl-3 text-right"
+              aria-invalid={Boolean(fieldErrors.password)}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
           </div>
           {fieldErrors.password ? (
             <p className="text-xs text-destructive">{fieldErrors.password}</p>
@@ -164,28 +162,27 @@ export function RegisterForm() {
           </Label>
           <div className="relative">
             <Lock
-              className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
+              className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
               aria-hidden="true"
-            />
-            <Input
-              id="register-confirm-password"
-              type={showConfirmPassword ? "text" : "password"}
-              dir="ltr"
-              autoComplete="new-password"
-              placeholder="تأكيد كلمة المرور"
-              className="h-10 ps-9 pe-9 text-end"
-              aria-invalid={Boolean(fieldErrors.confirmPassword)}
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
             />
             <button
               type="button"
               onClick={() => setShowConfirmPassword((value) => !value)}
               aria-label={showConfirmPassword ? "إخفاء تأكيد كلمة المرور" : "إظهار تأكيد كلمة المرور"}
-              className="absolute end-3 top-1/2 -translate-y-1/2 text-[#5F6368] transition-colors hover:text-[#161616]"
+              className="absolute right-9 top-1/2 -translate-y-1/2 text-[#5F6368] transition-colors hover:text-[#161616]"
             >
               {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
+            <Input
+              id="register-confirm-password"
+              type={showConfirmPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="تأكيد كلمة المرور"
+              className="h-10 pr-16 pl-3 text-right"
+              aria-invalid={Boolean(fieldErrors.confirmPassword)}
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+            />
           </div>
           {fieldErrors.confirmPassword ? (
             <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>

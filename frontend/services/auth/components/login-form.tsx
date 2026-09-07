@@ -58,17 +58,16 @@ export function LoginForm() {
           </Label>
           <div className="relative">
             <Mail
-              className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
+              className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
               aria-hidden="true"
             />
             <Input
               id="login-email"
               type="email"
-              dir="ltr"
               required
               autoComplete="email"
               placeholder="البريد الإلكتروني"
-              className="h-10 pe-9 text-end"
+              className="h-10 pr-9 pl-3 text-right"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
@@ -81,28 +80,27 @@ export function LoginForm() {
           </Label>
           <div className="relative">
             <Lock
-              className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
+              className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
               aria-hidden="true"
-            />
-            <Input
-              id="login-password"
-              type={showPassword ? "text" : "password"}
-              dir="ltr"
-              required
-              autoComplete="current-password"
-              placeholder="كلمة المرور"
-              className="h-10 ps-9 pe-9 text-end"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
             />
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
               aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-              className="absolute end-3 top-1/2 -translate-y-1/2 text-[#5F6368] transition-colors hover:text-[#161616]"
+              className="absolute right-9 top-1/2 -translate-y-1/2 text-[#5F6368] transition-colors hover:text-[#161616]"
             >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
+            <Input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              required
+              autoComplete="current-password"
+              placeholder="كلمة المرور"
+              className="h-10 pr-16 pl-3 text-right"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
           </div>
         </div>
 
