@@ -52,7 +52,7 @@ export function GuestCard({ guest }: { guest: Guest }) {
             <div className="relative flex size-12 shrink-0 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-base font-semibold text-white shadow-[0_6px_16px_-4px_rgba(27,143,234,0.45)]">
               {initials(guest.name) || "؟"}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 text-right">
               <p className="truncate text-sm font-semibold text-[#161616]">{guest.name}</p>
               {guest.job_title || guest.company ? (
                 <p className="flex items-center gap-1 truncate text-xs text-[#5F6368]">

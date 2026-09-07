@@ -21,7 +21,11 @@ export function SidebarUser() {
   if (!user) return null;
 
   return (
-    <div className="px-1">
+    <div className="px-1 text-right">
+      {/* text-right is physical (not the logical text-end), so it holds
+       * regardless of the browser's own script-based direction guess for
+       * this paragraph's content (an English name would otherwise render
+       * left-aligned here - see guest-card.tsx for the same issue). */}
       <p className="truncate text-sm font-medium text-[#161616]">{user.name}</p>
       <p className="truncate text-xs text-[#5F6368]" dir="ltr">
         {user.email}

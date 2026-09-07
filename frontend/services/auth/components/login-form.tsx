@@ -81,7 +81,7 @@ export function LoginForm() {
           </Label>
           <div className="relative">
             <Lock
-              className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
+              className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
               aria-hidden="true"
             />
             <Input
@@ -99,7 +99,7 @@ export function LoginForm() {
               type="button"
               onClick={() => setShowPassword((value) => !value)}
               aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-              className="absolute start-3 top-1/2 -translate-y-1/2 text-[#5F6368] transition-colors hover:text-[#161616]"
+              className="absolute end-3 top-1/2 -translate-y-1/2 text-[#5F6368] transition-colors hover:text-[#161616]"
             >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>

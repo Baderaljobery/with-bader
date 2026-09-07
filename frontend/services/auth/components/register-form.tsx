@@ -29,6 +29,7 @@ export function RegisterForm() {
   const router = useRouter();
   const register = useRegister();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -129,7 +130,7 @@ export function RegisterForm() {
           </Label>
           <div className="relative">
             <Lock
-              className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
+              className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
               aria-hidden="true"
             />
             <Input
@@ -147,7 +148,7 @@ export function RegisterForm() {
               type="button"
               onClick={() => setShowPassword((value) => !value)}
               aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-              className="absolute start-3 top-1/2 -translate-y-1/2 text-[#5F6368] transition-colors hover:text-[#161616]"
+              className="absolute end-3 top-1/2 -translate-y-1/2 text-[#5F6368] transition-colors hover:text-[#161616]"
             >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
@@ -163,20 +164,28 @@ export function RegisterForm() {
           </Label>
           <div className="relative">
             <Lock
-              className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
+              className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6368]"
               aria-hidden="true"
             />
             <Input
               id="register-confirm-password"
-              type={showPassword ? "text" : "password"}
+              type={showConfirmPassword ? "text" : "password"}
               dir="ltr"
               autoComplete="new-password"
               placeholder="تأكيد كلمة المرور"
-              className="h-10 pe-9 text-end"
+              className="h-10 ps-9 pe-9 text-end"
               aria-invalid={Boolean(fieldErrors.confirmPassword)}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((value) => !value)}
+              aria-label={showConfirmPassword ? "إخفاء تأكيد كلمة المرور" : "إظهار تأكيد كلمة المرور"}
+              className="absolute end-3 top-1/2 -translate-y-1/2 text-[#5F6368] transition-colors hover:text-[#161616]"
+            >
+              {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
           </div>
           {fieldErrors.confirmPassword ? (
             <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>

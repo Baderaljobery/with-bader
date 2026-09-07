@@ -23,7 +23,7 @@ export function GuestWorkspaceHeader({ guest }: { guest: Guest }) {
         <div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-xl font-semibold text-white shadow-[0_10px_24px_-8px_rgba(27,143,234,0.5)]">
           {initials(guest.name) || "؟"}
         </div>
-        <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="min-w-0 flex-1 space-y-1.5 text-right">
           <h1 className="truncate font-heading text-2xl font-semibold text-[#161616]">
             {guest.name}
           </h1>
