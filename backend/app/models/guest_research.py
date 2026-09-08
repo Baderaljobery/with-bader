@@ -6,6 +6,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     Text,
     UniqueConstraint,
@@ -23,6 +24,8 @@ class GuestResearch(Base):
     __table_args__ = (
         CheckConstraint("version > 0", name="guest_research_version_check"),
         UniqueConstraint("guest_id", "version", name="guest_research_guest_id_version_key"),
+        Index("idx_guest_research_guest_id", "guest_id"),
+        Index("idx_guest_research_guest_version", "guest_id", "version"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

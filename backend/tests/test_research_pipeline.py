@@ -120,6 +120,7 @@ class ResearchEngineTests(unittest.IsolatedAsyncioTestCase):
         from app.research.research_engine import ResearchEngine
         from app.schemas.guest import GuestCreate
         from app.services.guest_service import create_guest, delete_guest
+        from tests.db_test_helpers import create_test_owner, delete_test_owner
 
         class _SpySearchProvider(ResearchSearchProvider):
             provider_name = "mock"
@@ -145,8 +146,12 @@ class ResearchEngineTests(unittest.IsolatedAsyncioTestCase):
 
         db = SessionLocal()
         guest = None
+        owner = None
         try:
-            guest = create_guest(db, GuestCreate(name="Unit Test Guest - Research Engine"))
+            owner = create_test_owner(db)
+            guest = create_guest(
+                db, GuestCreate(name="Unit Test Guest - Research Engine"), owner.id
+            )
 
             search_spy = _SpySearchProvider(MockResearchSearchProvider())
             extractor_spy = _SpyExtractor(MockResearchExtractor())
@@ -161,6 +166,8 @@ class ResearchEngineTests(unittest.IsolatedAsyncioTestCase):
         finally:
             if guest is not None:
                 delete_guest(db, guest.id)
+            if owner is not None:
+                delete_test_owner(db, owner)
             db.close()
 
 

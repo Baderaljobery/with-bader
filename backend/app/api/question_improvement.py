@@ -4,6 +4,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
+from app.core.rate_limit import enforce_ai_rate_limit
 from app.database.session import get_db
 from app.models.user import User
 from app.questions.improvement.base import (
@@ -81,7 +82,7 @@ async def improve_question(
     request: QuestionImprovementRequest = Body(default_factory=QuestionImprovementRequest),
     db: Session = Depends(get_db),
     improver: QuestionImprover = Depends(_resolve_improver),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(enforce_ai_rate_limit),
 ) -> QuestionImprovementPreviewResponse:
     """Preview only - never modifies the question or creates a QuestionVersion.
     Use /improve/accept to apply the (possibly edited) improved text."""

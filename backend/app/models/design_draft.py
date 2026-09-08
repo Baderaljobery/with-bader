@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Text, func, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,6 +34,9 @@ class DesignDraft(Base):
             name="design_drafts_aspect_ratio_check",
         ),
         CheckConstraint("slide_count >= 1 AND slide_count <= 5", name="design_drafts_slide_count_check"),
+        Index("idx_design_drafts_guest_id", "guest_id"),
+        Index("idx_design_drafts_content_draft_id", "content_draft_id"),
+        Index("idx_design_drafts_status", "status"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -48,20 +51,20 @@ class DesignDraft(Base):
     )
 
     title: Mapped[str | None] = mapped_column(Text, nullable=True)
-    platform: Mapped[str] = mapped_column(String, nullable=False)
-    status: Mapped[str] = mapped_column(String, nullable=False, server_default="draft")
+    platform: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="draft")
 
-    template_id: Mapped[str] = mapped_column(String, nullable=False)
+    template_id: Mapped[str] = mapped_column(Text, nullable=False)
     slide_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    aspect_ratio: Mapped[str] = mapped_column(String, nullable=False)
+    aspect_ratio: Mapped[str] = mapped_column(Text, nullable=False)
 
-    background_color: Mapped[str] = mapped_column(String, nullable=False)
-    accent_color: Mapped[str] = mapped_column(String, nullable=False)
+    background_color: Mapped[str] = mapped_column(Text, nullable=False)
+    accent_color: Mapped[str] = mapped_column(Text, nullable=False)
 
     customizations: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="{}")
 
-    ai_provider: Mapped[str | None] = mapped_column(String, nullable=True)
-    ai_model: Mapped[str | None] = mapped_column(String, nullable=True)
+    ai_provider: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ai_model: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

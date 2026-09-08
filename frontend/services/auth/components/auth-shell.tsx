@@ -45,8 +45,8 @@ export function AuthShell({ children }: { children: ReactNode }) {
             className="pointer-events-none absolute -start-20 bottom-0 size-72 rounded-full bg-white/10 blur-2xl"
           />
 
-          <div className="relative rounded-2xl bg-white/15 p-3 backdrop-blur-sm w-fit">
-            <Logo size="md" className="brightness-0 invert" />
+          <div className="relative mt-10 w-fit self-center">
+            <Logo size="lg" className="h-25 brightness-0 invert" />
           </div>
 
           <div className="relative space-y-3">

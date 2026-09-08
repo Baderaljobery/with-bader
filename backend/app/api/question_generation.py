@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
+from app.core.rate_limit import enforce_ai_rate_limit
 from app.database.session import get_db
 from app.models.user import User
 from app.questions.generation.base import (
@@ -53,7 +54,7 @@ async def generate_questions(
     request: QuestionGenerationRequest,
     db: Session = Depends(get_db),
     engine: QuestionGenerationEngine = Depends(_resolve_engine),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(enforce_ai_rate_limit),
 ) -> QuestionGenerationResponse:
     """Preview only - does NOT persist anything. Use /generated/save to
     store the questions the user selects from this preview."""

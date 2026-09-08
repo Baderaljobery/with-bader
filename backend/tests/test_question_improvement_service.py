@@ -9,15 +9,20 @@ from app.services.question_improvement_service import (
     QuestionImprovementNoChangeError,
     accept_question_improvement,
 )
+from tests.db_test_helpers import create_test_owner, delete_test_owner
 
 
 class AcceptQuestionImprovementTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Improvement Service Test Guest"))
+        self.owner = create_test_owner(self.db)
+        self.guest = create_guest(
+            self.db, GuestCreate(name="Improvement Service Test Guest"), self.owner.id
+        )
 
     def tearDown(self):
         delete_guest(self.db, self.guest.id)
+        delete_test_owner(self.db, self.owner)
         self.db.close()
 
     def test_accept_updates_question_text_and_source(self):

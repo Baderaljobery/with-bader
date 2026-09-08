@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
+from app.core.pagination import PaginationParams
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.question_version import QuestionVersionCreate, QuestionVersionResponse
@@ -30,12 +31,15 @@ def create_question_version(
 @router.get("", response_model=list[QuestionVersionResponse])
 def list_question_versions(
     question_id: uuid.UUID,
+    pagination: PaginationParams = Depends(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[QuestionVersionResponse]:
     try:
         question_service.get_question_by_id_for_user(db, question_id, current_user.id)
-        return question_version_service.get_question_versions(db, question_id)
+        return question_version_service.get_question_versions(
+            db, question_id, skip=pagination.skip, limit=pagination.limit
+        )
     except question_service.QuestionNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 

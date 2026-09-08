@@ -19,15 +19,20 @@ from app.services import (
     question_service,
 )
 from app.services.guest_service import create_guest, delete_guest
+from tests.db_test_helpers import create_test_owner, delete_test_owner
 
 
 class ContentContextBuilderTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Context Builder Test Guest"))
+        self.owner = create_test_owner(self.db)
+        self.guest = create_guest(
+            self.db, GuestCreate(name="Context Builder Test Guest"), self.owner.id
+        )
 
     def tearDown(self):
         delete_guest(self.db, self.guest.id)
+        delete_test_owner(self.db, self.owner)
         self.db.close()
 
     def test_empty_guest_has_no_meaningful_context(self):

@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from app.database.session import SessionLocal
 from app.main import app
 from app.models.user import User
+from app.core.rate_limit import rate_limiter
 
 
 def make_authenticated_client(name: str = "Test Fixture User") -> TestClient:
@@ -26,6 +27,10 @@ def make_authenticated_client(name: str = "Test Fixture User") -> TestClient:
     the HTTP API) need `client.user_id` as `created_by`, or every scoped
     list/detail call would 404/exclude them; `client.email` lets a test
     log the same user back in directly."""
+    # Module-level clients are created during pytest collection. Clear only
+    # transient throttle state so independent test modules do not consume
+    # one another's per-IP registration allowance.
+    rate_limiter.reset()
     client = TestClient(app)
     email = f"test-{uuid.uuid4()}@example.com"
     response = client.post(

@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, Text, UniqueConstraint, func, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, Text, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,7 +34,12 @@ class DesignSlide(Base):
             name="design_slides_role_check",
         ),
         CheckConstraint("slide_index >= 1 AND slide_index <= 5", name="design_slides_slide_index_check"),
-        UniqueConstraint("design_draft_id", "slide_index", name="design_slides_draft_index_unique"),
+        UniqueConstraint(
+            "design_draft_id",
+            "slide_index",
+            name="design_slides_design_draft_id_slide_index_key",
+        ),
+        Index("idx_design_slides_design_draft_id", "design_draft_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

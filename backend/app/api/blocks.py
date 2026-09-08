@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
+from app.core.pagination import PaginationParams
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.block import BlockCreate, BlockResponse, BlockUpdate
@@ -17,6 +18,7 @@ guest_blocks_router = APIRouter(prefix="/api/guests/{guest_id}/notebook-blocks",
 @guest_blocks_router.get("", response_model=list[BlockResponse])
 def list_guest_notebook_blocks(
     guest_id: uuid.UUID,
+    pagination: PaginationParams = Depends(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[BlockResponse]:
@@ -25,7 +27,9 @@ def list_guest_notebook_blocks(
     rework) lists these so the user can explicitly select some."""
     try:
         guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
-        return block_service.get_text_blocks_for_guest(db, guest_id)
+        return block_service.get_text_blocks_for_guest(
+            db, guest_id, skip=pagination.skip, limit=pagination.limit
+        )
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
@@ -49,12 +53,15 @@ def create_block(
 @router.get("", response_model=list[BlockResponse])
 def list_blocks(
     page_id: uuid.UUID,
+    pagination: PaginationParams = Depends(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[BlockResponse]:
     try:
         notebook_page_service.get_notebook_page_by_id_for_user(db, page_id, current_user.id)
-        return block_service.get_blocks(db, page_id)
+        return block_service.get_blocks(
+            db, page_id, skip=pagination.skip, limit=pagination.limit
+        )
     except notebook_page_service.NotebookPageNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 

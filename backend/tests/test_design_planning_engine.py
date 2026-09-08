@@ -9,6 +9,7 @@ from app.schemas.content_draft import ContentDraftCreate
 from app.schemas.guest import GuestCreate
 from app.services import content_service
 from app.services.guest_service import create_guest, delete_guest
+from tests.db_test_helpers import create_test_owner, delete_test_owner
 
 
 def _options(**overrides):
@@ -24,11 +25,15 @@ def _options(**overrides):
 class DesignContentPlannerTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Design Content Planner Test Guest"))
+        self.owner = create_test_owner(self.db)
+        self.guest = create_guest(
+            self.db, GuestCreate(name="Design Content Planner Test Guest"), self.owner.id
+        )
         self.planner = DesignContentPlanner(planner=MockSlidePlanner())
 
     def tearDown(self):
         delete_guest(self.db, self.guest.id)
+        delete_test_owner(self.db, self.owner)
         self.db.close()
 
     async def test_no_selection_raises_insufficient_context(self):
@@ -74,10 +79,14 @@ class RaisingPlanner(SlidePlanner):
 class DesignContentPlannerNeverCallsProviderWhenInsufficientTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Design Content Planner Guard Test Guest"))
+        self.owner = create_test_owner(self.db)
+        self.guest = create_guest(
+            self.db, GuestCreate(name="Design Content Planner Guard Test Guest"), self.owner.id
+        )
 
     def tearDown(self):
         delete_guest(self.db, self.guest.id)
+        delete_test_owner(self.db, self.owner)
         self.db.close()
 
     async def test_provider_is_never_called_without_selected_context(self):

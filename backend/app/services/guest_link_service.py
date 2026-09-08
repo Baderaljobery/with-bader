@@ -22,13 +22,17 @@ def create_guest_link(db: Session, guest_id: uuid.UUID, link_in: GuestLinkCreate
     return link
 
 
-def get_guest_links(db: Session, guest_id: uuid.UUID) -> list[GuestLink]:
+def get_guest_links(
+    db: Session, guest_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> list[GuestLink]:
     get_guest_by_id(db, guest_id)
 
     stmt = (
         select(GuestLink)
         .where(GuestLink.guest_id == guest_id)
         .order_by(GuestLink.created_at.asc())
+        .offset(skip)
+        .limit(limit)
     )
     return list(db.scalars(stmt).all())
 

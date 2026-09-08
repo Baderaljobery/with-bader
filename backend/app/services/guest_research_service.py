@@ -37,13 +37,17 @@ def create_guest_research(
     return research
 
 
-def get_guest_research_history(db: Session, guest_id: uuid.UUID) -> list[GuestResearch]:
+def get_guest_research_history(
+    db: Session, guest_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> list[GuestResearch]:
     get_guest_by_id(db, guest_id)
 
     stmt = (
         select(GuestResearch)
         .where(GuestResearch.guest_id == guest_id)
         .order_by(GuestResearch.version.asc())
+        .offset(skip)
+        .limit(limit)
     )
     return list(db.scalars(stmt).all())
 

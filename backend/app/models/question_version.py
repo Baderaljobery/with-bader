@@ -5,8 +5,8 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
-    String,
     Text,
     UniqueConstraint,
     func,
@@ -29,6 +29,7 @@ class QuestionVersion(Base):
         UniqueConstraint(
             "question_id", "version", name="question_versions_question_id_version_key"
         ),
+        Index("idx_question_versions_question_id", "question_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -41,7 +42,7 @@ class QuestionVersion(Base):
 
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     text_: Mapped[str] = mapped_column("text", Text, nullable=False)
-    source: Mapped[str] = mapped_column(String, nullable=False)
+    source: Mapped[str] = mapped_column(Text, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

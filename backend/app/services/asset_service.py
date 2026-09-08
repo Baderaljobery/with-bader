@@ -30,7 +30,12 @@ def create_asset(db: Session, asset_in: AssetCreate, uploaded_by: uuid.UUID) -> 
 
 
 def get_assets(
-    db: Session, uploaded_by: uuid.UUID, guest_id: uuid.UUID | None = None, asset_type: str | None = None
+    db: Session,
+    uploaded_by: uuid.UUID,
+    guest_id: uuid.UUID | None = None,
+    asset_type: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
 ) -> list[Asset]:
     """Always scoped: either to a specific guest (ownership of which the
     caller has already verified) or, with no guest_id, to the current
@@ -44,7 +49,7 @@ def get_assets(
         stmt = stmt.where(Asset.uploaded_by == uploaded_by)
     if asset_type is not None:
         stmt = stmt.where(Asset.type == asset_type)
-    stmt = stmt.order_by(Asset.created_at.desc())
+    stmt = stmt.order_by(Asset.created_at.desc()).offset(skip).limit(limit)
 
     return list(db.scalars(stmt).all())
 

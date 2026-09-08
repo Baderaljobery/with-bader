@@ -24,13 +24,17 @@ def create_content_draft(
     return draft
 
 
-def get_content_drafts(db: Session, guest_id: uuid.UUID) -> list[ContentDraft]:
+def get_content_drafts(
+    db: Session, guest_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> list[ContentDraft]:
     get_guest_by_id(db, guest_id)
 
     stmt = (
         select(ContentDraft)
         .where(ContentDraft.guest_id == guest_id)
         .order_by(ContentDraft.updated_at.desc())
+        .offset(skip)
+        .limit(limit)
     )
     return list(db.scalars(stmt).all())
 

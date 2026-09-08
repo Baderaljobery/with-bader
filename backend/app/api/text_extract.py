@@ -15,8 +15,8 @@ from app.audio.validation import (
     validate_file_size,
     validate_filename_and_content_type,
 )
-from app.core.auth import get_current_user
 from app.core.config import settings
+from app.core.rate_limit import enforce_ai_rate_limit
 from app.models.user import User
 from app.schemas.transcription import TranscriptionResponse
 
@@ -41,7 +41,7 @@ def _resolve_service() -> SpeechToTextService:
 async def extract_text_from_audio(
     file: UploadFile = File(...),
     service: SpeechToTextService = Depends(_resolve_service),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(enforce_ai_rate_limit),
 ) -> TranscriptionResponse:
     """Stateless utility: audio in, text out. Defaults to Arabic (see
     GroqWhisperSTTProvider / GROQ_STT_LANGUAGE) - the caller does not

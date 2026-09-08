@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, func, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,6 +28,8 @@ class ContentDraft(Base):
             "status IN (" + ", ".join(f"'{s}'" for s in CONTENT_STATUSES) + ")",
             name="content_drafts_status_check",
         ),
+        Index("idx_content_drafts_guest_id", "guest_id"),
+        Index("idx_content_drafts_status", "status"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -38,18 +40,18 @@ class ContentDraft(Base):
         UUID(as_uuid=True), ForeignKey("guests.id", ondelete="CASCADE"), nullable=False
     )
 
-    platform: Mapped[str] = mapped_column(String, nullable=False)
-    length: Mapped[str] = mapped_column(String, nullable=False)
+    platform: Mapped[str] = mapped_column(Text, nullable=False)
+    length: Mapped[str] = mapped_column(Text, nullable=False)
 
     title: Mapped[str | None] = mapped_column(Text, nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
 
-    status: Mapped[str] = mapped_column(String, nullable=False, server_default="draft")
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="draft")
 
     source_context: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, server_default="[]")
 
-    ai_provider: Mapped[str | None] = mapped_column(String, nullable=True)
-    ai_model: Mapped[str | None] = mapped_column(String, nullable=True)
+    ai_provider: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ai_model: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

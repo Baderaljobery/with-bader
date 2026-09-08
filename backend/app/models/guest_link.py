@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func, text
+from sqlalchemy import DateTime, ForeignKey, Index, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -10,6 +10,7 @@ from app.database.base import Base
 
 class GuestLink(Base):
     __tablename__ = "guest_links"
+    __table_args__ = (Index("idx_guest_links_guest_id", "guest_id"),)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
@@ -19,7 +20,7 @@ class GuestLink(Base):
         UUID(as_uuid=True), ForeignKey("guests.id", ondelete="CASCADE"), nullable=False
     )
 
-    label: Mapped[str] = mapped_column(String, nullable=False)
+    label: Mapped[str] = mapped_column(Text, nullable=False)
     url: Mapped[str] = mapped_column(Text, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(

@@ -32,6 +32,8 @@ def get_questions(
     status: str | None = None,
     source: str | None = None,
     topic: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
 ) -> list[Question]:
     get_guest_by_id(db, guest_id)
 
@@ -42,7 +44,13 @@ def get_questions(
         stmt = stmt.where(Question.source == source)
     if topic is not None:
         stmt = stmt.where(Question.topic == topic)
-    stmt = stmt.order_by(Question.position.asc())
+    # Stable tie-breakers are required because new questions default to the
+    # same position; AI matching assigns Q1/Q2 refs from this ordering.
+    stmt = (
+        stmt.order_by(Question.position.asc(), Question.created_at.asc(), Question.id.asc())
+        .offset(skip)
+        .limit(limit)
+    )
 
     return list(db.scalars(stmt).all())
 

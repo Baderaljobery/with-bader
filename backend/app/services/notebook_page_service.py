@@ -24,13 +24,17 @@ def create_notebook_page(
     return page
 
 
-def get_notebook_pages(db: Session, notebook_id: uuid.UUID) -> list[NotebookPage]:
+def get_notebook_pages(
+    db: Session, notebook_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> list[NotebookPage]:
     get_notebook_by_id(db, notebook_id)
 
     stmt = (
         select(NotebookPage)
         .where(NotebookPage.notebook_id == notebook_id)
         .order_by(NotebookPage.position.asc())
+        .offset(skip)
+        .limit(limit)
     )
     return list(db.scalars(stmt).all())
 

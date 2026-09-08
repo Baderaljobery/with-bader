@@ -44,10 +44,18 @@ def create_block(db: Session, page_id: uuid.UUID, block_in: BlockCreate) -> Bloc
     return block
 
 
-def get_blocks(db: Session, page_id: uuid.UUID) -> list[Block]:
+def get_blocks(
+    db: Session, page_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> list[Block]:
     get_notebook_page_by_id(db, page_id)
 
-    stmt = select(Block).where(Block.page_id == page_id).order_by(Block.position.asc())
+    stmt = (
+        select(Block)
+        .where(Block.page_id == page_id)
+        .order_by(Block.position.asc())
+        .offset(skip)
+        .limit(limit)
+    )
     return list(db.scalars(stmt).all())
 
 
@@ -80,7 +88,9 @@ def update_block(db: Session, block_id: uuid.UUID, block_in: BlockUpdate) -> Blo
     return block
 
 
-def get_text_blocks_for_guest(db: Session, guest_id: uuid.UUID) -> list[Block]:
+def get_text_blocks_for_guest(
+    db: Session, guest_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> list[Block]:
     """All text-like blocks across every notebook/page belonging to this
     guest, for the Design Engine's supporting-notebook-content picker (the
     user selects specific blocks manually - this just lists what's
@@ -93,6 +103,8 @@ def get_text_blocks_for_guest(db: Session, guest_id: uuid.UUID) -> list[Block]:
         .join(Notebook, NotebookPage.notebook_id == Notebook.id)
         .where(Notebook.guest_id == guest_id, Block.type.in_(TEXT_BLOCK_TYPES))
         .order_by(Block.updated_at.desc())
+        .offset(skip)
+        .limit(limit)
     )
     return list(db.scalars(stmt).all())
 

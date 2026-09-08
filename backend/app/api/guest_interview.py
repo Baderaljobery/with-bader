@@ -20,6 +20,7 @@ from app.audio.validation import (
 )
 from app.core.auth import get_current_user
 from app.core.config import settings
+from app.core.rate_limit import enforce_ai_rate_limit
 from app.database.session import get_db
 from app.models.user import User
 from app.interview_intelligence.base import (
@@ -108,7 +109,7 @@ async def transcribe_interview(
     db: Session = Depends(get_db),
     stt_service: SpeechToTextService = Depends(_resolve_stt_service),
     matcher_service: InterviewIntelligenceService = Depends(_resolve_matcher_service),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(enforce_ai_rate_limit),
 ) -> GuestInterviewMatchResponse:
     """Audio -> SpeechToTextService -> transcript saved -> answer matching.
 
@@ -227,7 +228,7 @@ async def match_answers(
     guest_id: uuid.UUID,
     db: Session = Depends(get_db),
     matcher_service: InterviewIntelligenceService = Depends(_resolve_matcher_service),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(enforce_ai_rate_limit),
 ) -> GuestInterviewMatchResponse:
     """Re-run matching against the currently saved transcript + current
     question list, without re-uploading audio. Manual answers are never

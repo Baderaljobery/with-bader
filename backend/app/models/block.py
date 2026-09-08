@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Double, ForeignKey, String, func, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Double, ForeignKey, Index, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -35,6 +35,9 @@ class Block(Base):
             "type IN (" + ", ".join(f"'{block_type}'" for block_type in BLOCK_TYPES) + ")",
             name="blocks_type_check",
         ),
+        Index("idx_blocks_page_id", "page_id"),
+        Index("idx_blocks_page_position", "page_id", "position"),
+        Index("idx_blocks_linked_question", "linked_question_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -45,7 +48,7 @@ class Block(Base):
         UUID(as_uuid=True), ForeignKey("notebook_pages.id", ondelete="CASCADE"), nullable=False
     )
 
-    type: Mapped[str] = mapped_column(String, nullable=False)
+    type: Mapped[str] = mapped_column(Text, nullable=False)
     content: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="{}")
     position: Mapped[float] = mapped_column(Double, nullable=False, server_default="0")
 

@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: with_bader_test
+          POSTGRES_USER: with_bader
+          POSTGRES_PASSWORD: test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U with_bader -d with_bader_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://with_bader:test-password@127.0.0.1:5432/with_bader_test
+      ENVIRONMENT: test
+      AUTH_SECRET: ci-only-not-a-production-secret
+      RESEARCH_SEARCH_PROVIDER: mock
+      RESEARCH_EXTRACTOR_PROVIDER: mock
+      QUESTION_GENERATOR_PROVIDER: mock
+      QUESTION_IMPROVER_PROVIDER: mock
+      STT_PROVIDER: groq
+      GROQ_API_KEY: ci-only-placeholder
+      INTERVIEW_MATCHER_PROVIDER: mock
+      CONTENT_GENERATOR_PROVIDER: mock
+      SLIDE_PLANNER_PROVIDER: mock
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.6"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install ffmpeg and PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg postgresql-client
+      - name: Install backend dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+      - name: Migrate fresh database and check drift
+        run: python scripts/migrate.py
+      - name: Verify legacy-schema adoption path
+        run: >-
+          psql "postgresql://with_bader:test-password@127.0.0.1:5432/with_bader_test"
+          -c "ALTER TABLE guests ALTER COLUMN created_by DROP NOT NULL; DROP TABLE alembic_version;"
+          && python scripts/migrate.py
+      - name: Run backend tests
+        run: python -m pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run check
+
+  containers:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f backend/Dockerfile -t with-bader-backend .
+      - run: docker build -f frontend/Dockerfile -t with-bader-frontend .

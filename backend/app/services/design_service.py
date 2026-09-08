@@ -20,7 +20,9 @@ class DesignSlideNotFoundError(Exception):
     """Raised when a design slide does not exist within a given draft."""
 
 
-def get_design_drafts(db: Session, guest_id: uuid.UUID) -> list[DesignDraft]:
+def get_design_drafts(
+    db: Session, guest_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> list[DesignDraft]:
     get_guest_by_id(db, guest_id)
 
     stmt = (
@@ -28,6 +30,8 @@ def get_design_drafts(db: Session, guest_id: uuid.UUID) -> list[DesignDraft]:
         .options(selectinload(DesignDraft.slides))
         .where(DesignDraft.guest_id == guest_id)
         .order_by(DesignDraft.updated_at.desc())
+        .offset(skip)
+        .limit(limit)
     )
     return list(db.scalars(stmt).all())
 

@@ -22,11 +22,17 @@ def create_notebook(db: Session, guest_id: uuid.UUID, notebook_in: NotebookCreat
     return notebook
 
 
-def get_notebooks(db: Session, guest_id: uuid.UUID) -> list[Notebook]:
+def get_notebooks(
+    db: Session, guest_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> list[Notebook]:
     get_guest_by_id(db, guest_id)
 
     stmt = (
-        select(Notebook).where(Notebook.guest_id == guest_id).order_by(Notebook.created_at.asc())
+        select(Notebook)
+        .where(Notebook.guest_id == guest_id)
+        .order_by(Notebook.created_at.asc())
+        .offset(skip)
+        .limit(limit)
     )
     return list(db.scalars(stmt).all())
 

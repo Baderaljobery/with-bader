@@ -9,15 +9,20 @@ from app.services.guest_transcript_service import (
     GuestTranscriptAlreadyExistsError,
     GuestTranscriptNotFoundError,
 )
+from tests.db_test_helpers import create_test_owner, delete_test_owner
 
 
 class GuestTranscriptServiceTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Transcript Service Test Guest"))
+        self.owner = create_test_owner(self.db)
+        self.guest = create_guest(
+            self.db, GuestCreate(name="Transcript Service Test Guest"), self.owner.id
+        )
 
     def tearDown(self):
         delete_guest(self.db, self.guest.id)
+        delete_test_owner(self.db, self.owner)
         self.db.close()
 
     def test_create_transcript(self):

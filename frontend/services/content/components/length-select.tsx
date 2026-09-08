@@ -32,7 +32,7 @@ export function LengthSelect({ value, onChange, disabled }: LengthSelectProps) {
             className={cn(
               "rounded-xl px-4 py-2 text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50",
               active
-                ? "bg-white text-foreground shadow-[var(--shadow-soft)]"
+                ? "bg-[image:var(--gradient-primary)] text-white shadow-[0_10px_24px_-10px_rgba(27,143,234,0.55)]"
                 : "text-muted-foreground hover:bg-white/70 hover:text-foreground",
             )}
           >

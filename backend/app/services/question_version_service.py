@@ -35,13 +35,17 @@ def create_question_version(
     return version
 
 
-def get_question_versions(db: Session, question_id: uuid.UUID) -> list[QuestionVersion]:
+def get_question_versions(
+    db: Session, question_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> list[QuestionVersion]:
     get_question_by_id(db, question_id)
 
     stmt = (
         select(QuestionVersion)
         .where(QuestionVersion.question_id == question_id)
         .order_by(QuestionVersion.version.asc())
+        .offset(skip)
+        .limit(limit)
     )
     return list(db.scalars(stmt).all())
 

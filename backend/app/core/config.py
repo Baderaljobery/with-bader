@@ -1,3 +1,6 @@
+from typing import Literal
+
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,6 +10,9 @@ class Settings(BaseSettings):
     database_url: str
 
     environment: str = "development"
+
+    # Comma-separated so operators can configure this without JSON quoting.
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     # --- Authentication ---
     # HS256-signed session token stored as an HttpOnly cookie (see
@@ -18,6 +24,17 @@ class Settings(BaseSettings):
     # fresh login on every visit; refreshing the page must never log the
     # user out (Part 50 of the auth rework spec).
     auth_token_expire_minutes: int = 60 * 24 * 14
+    registration_mode: Literal["open", "closed"] = "open"
+
+    # Sliding-window rate limits. The application is intentionally deployed
+    # as one API process on one server, so an in-process store is sufficient
+    # and avoids adding Redis solely for throttling.
+    login_rate_limit: int = Field(default=10, ge=1)
+    login_rate_window_seconds: int = Field(default=60, ge=1)
+    register_rate_limit: int = Field(default=5, ge=1)
+    register_rate_window_seconds: int = Field(default=3600, ge=1)
+    ai_rate_limit: int = Field(default=30, ge=1)
+    ai_rate_window_seconds: int = Field(default=60, ge=1)
 
     research_max_queries: int = 8
     research_results_per_query: int = 5
@@ -131,6 +148,10 @@ class Settings(BaseSettings):
 
     slide_planner_provider: str = "mock"
     groq_slide_planner_model: str = "openai/gpt-oss-120b"
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 settings = Settings()

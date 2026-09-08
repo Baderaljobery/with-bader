@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
+from app.core.pagination import PaginationParams
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.notebook_page import (
@@ -34,12 +35,15 @@ def create_notebook_page(
 @router.get("", response_model=list[NotebookPageResponse])
 def list_notebook_pages(
     notebook_id: uuid.UUID,
+    pagination: PaginationParams = Depends(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[NotebookPageResponse]:
     try:
         notebook_service.get_notebook_by_id_for_user(db, notebook_id, current_user.id)
-        return notebook_page_service.get_notebook_pages(db, notebook_id)
+        return notebook_page_service.get_notebook_pages(
+            db, notebook_id, skip=pagination.skip, limit=pagination.limit
+        )
     except notebook_service.NotebookNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 

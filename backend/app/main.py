@@ -31,6 +31,7 @@ from app.api.questions import detail_router as questions_detail_router
 from app.api.questions import router as questions_router
 from app.api.statistics import router as statistics_router
 from app.api.text_extract import router as text_extract_router
+from app.core.config import settings
 from app.design_generation.storage import MEDIA_URL_PREFIX, STORAGE_DIR
 
 app = FastAPI(title="With Bader API")
@@ -41,10 +42,7 @@ app = FastAPI(title="With Bader API")
 # is not permitted alongside a wildcard origin by the CORS spec.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=settings.cors_origin_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

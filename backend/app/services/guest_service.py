@@ -25,13 +25,11 @@ def _auto_content_status(guest: Guest) -> str:
     return "in_progress" if guest.interview_scheduled_at is not None else "not_started"
 
 
-def create_guest(db: Session, guest_in: GuestCreate, created_by: uuid.UUID | None = None) -> Guest:
+def create_guest(db: Session, guest_in: GuestCreate, created_by: uuid.UUID) -> Guest:
     """`created_by` is always the authenticated user's id in production use
     (see app/api/guests.py) - the client-supplied `guest_in` has no
     `created_by` field at all (see app/schemas/guest.py), so there is
-    nothing for it to override. The default of `None` exists only so
-    existing tests for *other* features, which create guests purely as
-    fixtures and predate ownership, keep working unchanged."""
+    nothing for it to override."""
     guest = Guest(**guest_in.model_dump(), created_by=created_by)
     db.add(guest)
     try:

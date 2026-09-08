@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
+from app.core.pagination import PaginationParams
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.guest import GuestCreate, GuestResponse, GuestUpdate
@@ -27,12 +28,13 @@ def create_guest(
 
 @router.get("", response_model=list[GuestResponse])
 def list_guests(
-    skip: int = 0,
-    limit: int = 100,
+    pagination: PaginationParams = Depends(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[GuestResponse]:
-    return guest_service.get_guests(db, created_by=current_user.id, skip=skip, limit=limit)
+    return guest_service.get_guests(
+        db, created_by=current_user.id, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{guest_id}", response_model=GuestResponse)

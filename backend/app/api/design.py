@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
+from app.core.pagination import PaginationParams
+from app.core.rate_limit import enforce_ai_rate_limit
 from app.database.session import get_db
 from app.design_planning.base import (
     SlidePlannerConfigurationError,
@@ -41,12 +43,15 @@ def _resolve_planner() -> DesignContentPlanner:
 @router.get("", response_model=list[DesignDraftResponse])
 def list_designs(
     guest_id: uuid.UUID,
+    pagination: PaginationParams = Depends(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[DesignDraftResponse]:
     try:
         guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
-        return design_service.get_design_drafts(db, guest_id)
+        return design_service.get_design_drafts(
+            db, guest_id, skip=pagination.skip, limit=pagination.limit
+        )
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
@@ -57,7 +62,7 @@ async def plan_design(
     request: DesignPlanRequest,
     db: Session = Depends(get_db),
     planner: DesignContentPlanner = Depends(_resolve_planner),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(enforce_ai_rate_limit),
 ) -> DesignPlanResponse:
     """Step 1 (Part 12): structured text preview only - no image is
     generated and nothing is persisted here. The user reviews/edits this

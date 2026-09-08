@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
+from app.core.rate_limit import enforce_ai_rate_limit
 from app.database.session import get_db
 from app.models.user import User
 from app.research.extraction.base import (
@@ -48,7 +49,7 @@ async def run_guest_research(
     guest_id: uuid.UUID,
     db: Session = Depends(get_db),
     engine: ResearchEngine = Depends(_resolve_research_engine),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(enforce_ai_rate_limit),
 ) -> GuestResearchRunResponse:
     try:
         guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)

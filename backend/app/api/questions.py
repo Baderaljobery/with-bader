@@ -5,6 +5,7 @@ from fastapi import status as http_status
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
+from app.core.pagination import PaginationParams
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.question import (
@@ -38,6 +39,7 @@ def create_question(
 @router.get("", response_model=list[QuestionResponse])
 def list_questions(
     guest_id: uuid.UUID,
+    pagination: PaginationParams = Depends(),
     status: QuestionStatus | None = None,
     source: QuestionSource | None = None,
     topic: str | None = None,
@@ -47,7 +49,13 @@ def list_questions(
     try:
         guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
         return question_service.get_questions(
-            db, guest_id, status=status, source=source, topic=topic
+            db,
+            guest_id,
+            status=status,
+            source=source,
+            topic=topic,
+            skip=pagination.skip,
+            limit=pagination.limit,
         )
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

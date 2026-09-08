@@ -15,6 +15,8 @@ from app.content.generation.engine import (
 )
 from app.content.generation.models import ContentGenerationOptions
 from app.core.auth import get_current_user
+from app.core.pagination import PaginationParams
+from app.core.rate_limit import enforce_ai_rate_limit
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.content_draft import ContentDraftCreate, ContentDraftResponse, ContentDraftUpdate
@@ -47,7 +49,7 @@ async def generate_content(
     request: ContentGenerationRequest,
     db: Session = Depends(get_db),
     engine: ContentGenerationEngine = Depends(_resolve_engine),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(enforce_ai_rate_limit),
 ) -> ContentGenerationResponse:
     """Preview only - does NOT persist anything. Use POST
     /api/guests/{guest_id}/content to save the draft the user reviews from
@@ -106,12 +108,15 @@ def create_content(
 @router.get("", response_model=list[ContentDraftResponse])
 def list_content(
     guest_id: uuid.UUID,
+    pagination: PaginationParams = Depends(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[ContentDraftResponse]:
     try:
         guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
-        return content_service.get_content_drafts(db, guest_id)
+        return content_service.get_content_drafts(
+            db, guest_id, skip=pagination.skip, limit=pagination.limit
+        )
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, String, func, text
+from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, Index, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,6 +20,9 @@ class Asset(Base):
         CheckConstraint(
             "size_bytes IS NULL OR size_bytes >= 0", name="assets_size_bytes_check"
         ),
+        Index("idx_assets_uploaded_by", "uploaded_by"),
+        Index("idx_assets_type", "type"),
+        Index("idx_assets_guest_id", "guest_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -33,10 +36,10 @@ class Asset(Base):
         UUID(as_uuid=True), ForeignKey("guests.id", ondelete="CASCADE"), nullable=True
     )
 
-    type: Mapped[str] = mapped_column(String, nullable=False)
-    file_name: Mapped[str] = mapped_column(String, nullable=False)
-    file_path: Mapped[str] = mapped_column(String, nullable=False)
-    mime_type: Mapped[str | None] = mapped_column(String, nullable=True)
+    type: Mapped[str] = mapped_column(Text, nullable=False)
+    file_name: Mapped[str] = mapped_column(Text, nullable=False)
+    file_path: Mapped[str] = mapped_column(Text, nullable=False)
+    mime_type: Mapped[str | None] = mapped_column(Text, nullable=True)
     size_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     metadata_: Mapped[dict] = mapped_column("metadata", JSONB, nullable=False, server_default="{}")
 

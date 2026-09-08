@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import clear_session_cookie, get_current_user, set_session_cookie
+from app.core.rate_limit import enforce_login_rate_limit, enforce_registration_request
 from app.core.security import create_session_token
 from app.database.session import get_db
 from app.models.user import User
@@ -13,7 +14,12 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)) -> UserResponse:
+def register(
+    payload: RegisterRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_registration_request),
+) -> UserResponse:
     """Auto-authenticates on success (Part 4) - registering and logging in
     are the same request, no separate login step required."""
     try:
@@ -26,7 +32,12 @@ def register(payload: RegisterRequest, response: Response, db: Session = Depends
 
 
 @router.post("/login", response_model=UserResponse)
-def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)) -> UserResponse:
+def login(
+    payload: LoginRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_login_rate_limit),
+) -> UserResponse:
     user = user_service.authenticate_user(db, payload.email, payload.password)
     if user is None:
         # Same message whether the email doesn't exist or the password is

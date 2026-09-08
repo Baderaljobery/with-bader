@@ -18,5 +18,10 @@ def delete_generated_image(image_path: str | None) -> None:
     if not image_path or not image_path.startswith(f"{MEDIA_URL_PREFIX}/"):
         return
     filename = image_path.removeprefix(f"{MEDIA_URL_PREFIX}/")
-    file_path = STORAGE_DIR / filename
+    storage_root = STORAGE_DIR.resolve()
+    file_path = (storage_root / filename).resolve()
+    # Historical rows contain a relative media URL. Never let a malformed
+    # or manually-edited row escape the configured storage directory.
+    if not file_path.is_relative_to(storage_root) or file_path == storage_root:
+        return
     file_path.unlink(missing_ok=True)

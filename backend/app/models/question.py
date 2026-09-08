@@ -6,8 +6,8 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
-    String,
     Text,
     func,
     text,
@@ -38,6 +38,9 @@ class Question(Base):
             "answer_source IS NULL OR answer_source IN ('manual', 'ai_extracted')",
             name="questions_answer_source_check",
         ),
+        Index("idx_questions_guest_id", "guest_id"),
+        Index("idx_questions_guest_position", "guest_id", "position"),
+        Index("idx_questions_status", "status"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -50,9 +53,9 @@ class Question(Base):
 
     text_: Mapped[str] = mapped_column("text", Text, nullable=False)
 
-    source: Mapped[str] = mapped_column(String, nullable=False, server_default="manual")
-    status: Mapped[str] = mapped_column(String, nullable=False, server_default="draft")
-    topic: Mapped[str | None] = mapped_column(String, nullable=True)
+    source: Mapped[str] = mapped_column(Text, nullable=False, server_default="manual")
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="draft")
+    topic: Mapped[str | None] = mapped_column(Text, nullable=True)
     position: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
     is_important: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
@@ -63,9 +66,9 @@ class Question(Base):
     spoken_question: Mapped[str | None] = mapped_column(Text, nullable=True)
     answer: Mapped[str | None] = mapped_column(Text, nullable=True)
     answer_status: Mapped[str] = mapped_column(
-        String, nullable=False, server_default="not_answered"
+        Text, nullable=False, server_default="not_answered"
     )
-    answer_source: Mapped[str | None] = mapped_column(String, nullable=True)
+    answer_source: Mapped[str | None] = mapped_column(Text, nullable=True)
     answer_updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

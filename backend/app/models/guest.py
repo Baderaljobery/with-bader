@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, String, Text, func, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -22,23 +22,39 @@ class Guest(Base):
             "content_status IN ('not_started', 'in_progress', 'published')",
             name="guests_content_status_check",
         ),
+        Index("idx_guests_created_by", "created_by"),
+        Index("idx_guests_preparation_status", "preparation_status"),
+        Index("idx_guests_content_status", "content_status"),
+        Index("idx_guests_name", "name"),
+        Index(
+            "idx_guests_interview_scheduled_at",
+            "interview_scheduled_at",
+            postgresql_where=text("interview_scheduled_at IS NOT NULL"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
 
-    created_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    created_by: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
 
-    name: Mapped[str] = mapped_column(String, nullable=False)
-    slug: Mapped[str | None] = mapped_column(String, unique=True, nullable=True)
-    job_title: Mapped[str | None] = mapped_column(String, nullable=True)
-    company: Mapped[str | None] = mapped_column(String, nullable=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    slug: Mapped[str | None] = mapped_column(Text, unique=True, nullable=True)
+    job_title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    company: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     photo_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("assets.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True),
+        ForeignKey(
+            "assets.id",
+            name="guests_photo_id_fkey",
+            ondelete="SET NULL",
+            use_alter=True,
+        ),
+        nullable=True,
     )
 
     biography: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -46,10 +62,10 @@ class Guest(Base):
     research_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     preparation_status: Mapped[str] = mapped_column(
-        String, nullable=False, server_default="not_started"
+        Text, nullable=False, server_default="not_started"
     )
     content_status: Mapped[str] = mapped_column(
-        String, nullable=False, server_default="not_started"
+        Text, nullable=False, server_default="not_started"
     )
     # True once the user has explicitly chosen content_status themselves -
     # while False, content_status is kept in sync with the automatic
