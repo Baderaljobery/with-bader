@@ -46,6 +46,17 @@ class Guest(Base):
     job_title: Mapped[str | None] = mapped_column(Text, nullable=True)
     company: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Bilingual name (the ONLY bilingual identity field - job_title/company/
+    # biography stay single-value, see below). Nullable at the DB level for
+    # legacy-row compatibility (existing guests predate this and are never
+    # backfilled with fabricated translations); GuestCreate requires both
+    # for newly created guests, and guest_service.update_guest requires the
+    # pair together the first time a legacy guest is edited into having
+    # them. `name` below stays untouched as the legacy/display fallback -
+    # see Guest.display_name below.
+    name_ar: Mapped[str | None] = mapped_column(Text, nullable=True)
+    name_en: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     photo_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey(
@@ -114,3 +125,11 @@ class Guest(Base):
     design_drafts: Mapped[list["DesignDraft"]] = relationship(
         back_populates="guest", cascade="all, delete-orphan"
     )
+
+    @property
+    def display_name(self) -> str:
+        """Arabic-first display name (Phase: Arabic-first display). Falls
+        back to the legacy `name` column only for pre-bilingual rows - never
+        used to weaken validation for newly created guests, which always
+        have name_ar populated."""
+        return self.name_ar or self.name

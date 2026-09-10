@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { BackgroundPattern } from "@/components/brand/background-pattern";
 import { AmbientBackground } from "@/components/shared/ambient-background";
 import { MobileTopbar } from "./mobile-topbar";
 import { Sidebar } from "./sidebar";
@@ -13,10 +14,16 @@ import { Sidebar } from "./sidebar";
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div dir="ltr" className="flex h-dvh min-h-dvh w-full overflow-hidden bg-[#FAFBFD]">
-      <div dir="rtl" className="relative flex min-w-0 flex-1 flex-col">
+      <div
+        dir="rtl"
+        className="relative isolate flex min-w-0 flex-1 flex-col overflow-hidden bg-[#FAFBFD]"
+      >
         <AmbientBackground />
-        <MobileTopbar />
-        <main className="flex-1 overflow-y-auto">
+        <BackgroundPattern />
+        <div className="relative z-10">
+          <MobileTopbar />
+        </div>
+        <main className="relative z-10 flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
             {children}
           </div>

@@ -50,10 +50,15 @@ export function GuestCard({ guest }: { guest: Guest }) {
         <CardHeader className="flex-row items-start justify-between gap-2 space-y-0">
           <div className="flex items-center gap-3.5">
             <div className="relative flex size-12 shrink-0 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-base font-semibold text-white shadow-[0_6px_16px_-4px_rgba(27,143,234,0.45)]">
-              {initials(guest.name) || "؟"}
+              {initials(guest.display_name) || "؟"}
             </div>
             <div className="min-w-0 text-right">
-              <p className="truncate text-sm font-semibold text-[#161616]">{guest.name}</p>
+              <p className="truncate text-sm font-semibold text-[#161616]">{guest.display_name}</p>
+              {guest.name_en && guest.name_en !== guest.display_name ? (
+                <p dir="ltr" className="truncate text-start text-xs text-[#5F6368]">
+                  {guest.name_en}
+                </p>
+              ) : null}
               {guest.job_title || guest.company ? (
                 <p className="flex items-center gap-1 truncate text-xs text-[#5F6368]">
                   <Briefcase className="size-3 shrink-0" aria-hidden="true" />
@@ -69,7 +74,7 @@ export function GuestCard({ guest }: { guest: Guest }) {
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  aria-label={`إجراءات ${guest.name}`}
+                  aria-label={`إجراءات ${guest.display_name}`}
                   onClick={(event) => event.stopPropagation()}
                 />
               }

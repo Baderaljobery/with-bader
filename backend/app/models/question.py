@@ -12,7 +12,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
@@ -41,6 +41,21 @@ class Question(Base):
         Index("idx_questions_guest_id", "guest_id"),
         Index("idx_questions_guest_position", "guest_id", "position"),
         Index("idx_questions_status", "status"),
+        Index(
+            "uq_questions_guest_ai_text_hash",
+            "guest_id",
+            "ai_normalized_text_hash",
+            unique=True,
+            postgresql_where=text(
+                "source = 'ai_generated' AND ai_normalized_text_hash IS NOT NULL"
+            ),
+        ),
+        Index(
+            "uq_questions_generation_candidate_id",
+            "generation_candidate_id",
+            unique=True,
+            postgresql_where=text("generation_candidate_id IS NOT NULL"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -56,7 +71,30 @@ class Question(Base):
     source: Mapped[str] = mapped_column(Text, nullable=False, server_default="manual")
     status: Mapped[str] = mapped_column(Text, nullable=False, server_default="draft")
     topic: Mapped[str | None] = mapped_column(Text, nullable=True)
+    category: Mapped[str | None] = mapped_column(Text, nullable=True)
+    priority: Mapped[str | None] = mapped_column(Text, nullable=True)
+    intent_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     position: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+
+    research_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("guest_research.id", ondelete="SET NULL"), nullable=True
+    )
+    research_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    research_item_ids: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, server_default="[]"
+    )
+    source_urls: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, server_default="[]"
+    )
+    follow_up_questions: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, server_default="[]"
+    )
+    generation_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    generation_run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    generation_candidate_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
+    ai_normalized_text_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     is_important: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     is_optional: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")

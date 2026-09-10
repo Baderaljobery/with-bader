@@ -62,8 +62,21 @@ export function GenerationPreviewSheet({ guestId, result, onOpenChange }: Genera
     if (selectedQuestions.length === 0) return;
 
     try {
-      const response = await saveGenerated.mutateAsync(selectedQuestions);
-      toast.success(`تم حفظ ${response.saved_count} سؤال بنجاح`);
+      const response = await saveGenerated.mutateAsync({
+        generation_run_id: result.generation_run_id,
+        research_id: result.research_id,
+        research_version: result.research_version,
+        questions: selectedQuestions,
+      });
+      if (response.saved_count > 0) {
+        toast.success(
+          response.skipped_count > 0
+            ? `تم حفظ ${response.saved_count} وتجاوز ${response.skipped_count} سؤال مكرر`
+            : `تم حفظ ${response.saved_count} سؤال بنجاح`,
+        );
+      } else {
+        toast.info("لم تُحفظ أسئلة جديدة لأن المحدد محفوظ مسبقًا");
+      }
       onOpenChange(false);
     } catch (error) {
       const message = error instanceof ApiError ? error.message : "تعذر حفظ الأسئلة، حاول مرة أخرى";
@@ -85,6 +98,12 @@ export function GenerationPreviewSheet({ guestId, result, onOpenChange }: Genera
 
         {result ? (
           <>
+            {result.generated_count < result.requested_count ? (
+              <p className="mx-4 rounded-lg border border-[#E6EAF0] bg-[#F7F8FA] px-3 py-2 text-xs text-[#5F6368]">
+                تم عرض {result.generated_count} من أصل {result.requested_count} بعد استبعاد الأسئلة
+                المكررة أو المتشابهة.
+              </p>
+            ) : null}
             <div className="flex items-center justify-between px-4">
               <label className="flex items-center gap-2 text-sm text-[#5F6368]">
                 <Checkbox checked={allSelected} onCheckedChange={toggleAll} />

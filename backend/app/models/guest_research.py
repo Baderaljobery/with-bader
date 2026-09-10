@@ -5,6 +5,7 @@ from typing import Any
 from sqlalchemy import (
     CheckConstraint,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -49,10 +50,24 @@ class GuestResearch(Base):
     interesting_events: Mapped[list[Any]] = mapped_column(
         JSONB, nullable=False, server_default="[]"
     )
+    # Prior public activity (interviews, podcasts, panels, keynotes,
+    # articles quoting the guest) - about the guest's history BEFORE this
+    # research run, never about the future With Bader interview itself.
+    public_appearances: Mapped[list[Any]] = mapped_column(
+        JSONB, nullable=False, server_default="[]"
+    )
     potential_interview_angles: Mapped[list[Any]] = mapped_column(
         JSONB, nullable=False, server_default="[]"
     )
     sources: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, server_default="[]")
+
+    # Aggregate identity-relevance signal for this run's evidence (Phase 11,
+    # app/research/identity_resolution.py) - 0..1, null for pre-existing
+    # rows saved before this concept existed. Low values mean the run found
+    # little evidence confidently tied to this specific guest; the frontend
+    # surfaces this as "identity confirmation may be needed" rather than
+    # presenting a sparse result as if it were simply "no news found".
+    identity_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     raw_ai_response: Mapped[Any | None] = mapped_column(JSONB, nullable=True)
 

@@ -61,6 +61,8 @@ def update_guest(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except guest_service.DuplicateSlugError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except guest_service.IncompleteBilingualIdentityError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
 
 
 @router.delete("/{guest_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -14,7 +14,7 @@ from app.models.user import User
 from app.schemas.block import BlockCreate
 from app.schemas.content_draft import ContentDraftCreate
 from app.schemas.design_generation import DesignCreateRequest, DesignSlideInput
-from app.schemas.guest import GuestCreate, GuestUpdate
+from app.schemas.guest import GuestUpdate
 from app.schemas.guest_link import GuestLinkCreate
 from app.schemas.guest_research import GuestResearchCreate
 from app.schemas.guest_transcript import GuestTranscriptCreate
@@ -34,7 +34,7 @@ from app.services import (
     question_service,
 )
 from tests.auth_test_helpers import make_authenticated_client
-
+from tests.db_test_helpers import make_guest_create
 
 class CrossUserIsolationTests(unittest.TestCase):
     def setUp(self):
@@ -43,7 +43,7 @@ class CrossUserIsolationTests(unittest.TestCase):
         self.client_b = make_authenticated_client("User B")
 
         self.guest = guest_service.create_guest(
-            self.db, GuestCreate(name="ضيف المستخدم أ", interview_scheduled_at="2026-09-15T10:00:00"),
+            self.db, make_guest_create(name="ضيف المستخدم أ", interview_scheduled_at="2026-09-15T10:00:00"),
             created_by=self.client_a.user_id,
         )
         self.question = question_service.create_question(
@@ -269,7 +269,6 @@ class CrossUserIsolationTests(unittest.TestCase):
         self.assertGreaterEqual(totals["questions"], 1)
         self.assertGreaterEqual(totals["content_drafts"], 1)
         self.assertGreaterEqual(totals["designs"], 1)
-
 
 if __name__ == "__main__":
     unittest.main()

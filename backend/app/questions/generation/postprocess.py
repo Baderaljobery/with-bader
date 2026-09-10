@@ -1,5 +1,6 @@
 from app.questions.generation.groq_models import GroqQuestionGenerationSchema
 from app.questions.generation.models import GeneratedQuestionItem, ResearchContextItem
+from app.questions.generation.similarity import normalize_question_text
 
 
 def _resolve_research_ids(
@@ -26,8 +27,7 @@ def _resolve_research_ids(
 
 
 def _normalize_text(text: str) -> str:
-    normalized = " ".join(text.strip().lower().split())
-    return normalized.rstrip("؟?.!،, ")
+    return normalize_question_text(text)
 
 
 def _tokenize(text: str) -> set[str]:
@@ -105,6 +105,7 @@ def build_generated_questions(
                 text=text,
                 topic=raw.topic,
                 category=raw.category,
+                intent_summary=raw.intent_summary.strip() or text,
                 priority=raw.priority,
                 research_item_ids=valid_ids,
                 source_urls=urls,

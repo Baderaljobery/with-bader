@@ -45,10 +45,21 @@ class QuestionResponse(BaseModel):
     source: QuestionSource
     status: QuestionStatus
     topic: str | None = None
+    category: str | None = None
+    priority: str | None = None
+    intent_summary: str | None = None
     position: int
     is_important: bool
     is_optional: bool
     notes: str | None = None
+    research_id: uuid.UUID | None = None
+    research_version: int | None = None
+    research_item_ids: list[str] = Field(default_factory=list)
+    source_urls: list[str] = Field(default_factory=list)
+    follow_up_questions: list[str] = Field(default_factory=list)
+    generation_reason: str | None = None
+    generation_run_id: uuid.UUID | None = None
+    generation_candidate_id: uuid.UUID | None = None
     spoken_question: str | None = None
     answer: str | None = None
     answer_status: AnswerStatus

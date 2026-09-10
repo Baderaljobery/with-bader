@@ -137,7 +137,13 @@ class PaginationIntegrationTests(unittest.TestCase):
 
     def test_guest_collection_applies_skip_and_limit(self):
         for index in range(3):
-            response = self.client.post("/api/guests", json={"name": f"Paged Guest {index}"})
+            response = self.client.post(
+                "/api/guests",
+                json={
+                    "name_ar": f"ضيف صفحات {index}",
+                    "name_en": f"Paged Guest {index}",
+                },
+            )
             self.assertEqual(response.status_code, 201, response.text)
 
         response = self.client.get("/api/guests?skip=1&limit=2")

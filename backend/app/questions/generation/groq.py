@@ -11,15 +11,25 @@ from app.questions.generation.base import (
 )
 from app.questions.generation.groq_models import (
     GROQ_QUESTION_GENERATION_JSON_SCHEMA,
+    GROQ_SEMANTIC_DUPLICATE_JSON_SCHEMA,
     GroqQuestionGenerationSchema,
+    GroqSemanticDuplicateSchema,
 )
 from app.questions.generation.models import (
+    ExistingQuestionItem,
     QuestionGenerationOptions,
     QuestionGenerationResult,
     ResearchContextItem,
+    SemanticComparisonDecision,
+    SemanticComparisonPair,
 )
 from app.questions.generation.postprocess import build_generated_questions
-from app.questions.generation.prompts import SYSTEM_PROMPT, build_user_prompt
+from app.questions.generation.prompts import (
+    SEMANTIC_DUPLICATE_SYSTEM_PROMPT,
+    SYSTEM_PROMPT,
+    build_semantic_duplicate_prompt,
+    build_user_prompt,
+)
 
 
 class GroqQuestionGenerator(QuestionGenerator):
@@ -53,9 +63,10 @@ class GroqQuestionGenerator(QuestionGenerator):
         guest: Guest,
         research_items: list[ResearchContextItem],
         options: QuestionGenerationOptions,
+        existing_questions: list[ExistingQuestionItem] | None = None,
     ) -> QuestionGenerationResult:
         indexed = {item.id: item for item in research_items}
-        user_prompt = build_user_prompt(guest, research_items, options)
+        user_prompt = build_user_prompt(guest, research_items, options, existing_questions)
 
         try:
             response = await self._client.chat.completions.create(
@@ -120,3 +131,68 @@ class GroqQuestionGenerator(QuestionGenerator):
             debug["output_tokens"] = getattr(usage, "completion_tokens", None)
 
         return QuestionGenerationResult(questions=questions, raw_ai_response=debug)
+
+    async def classify_duplicate_pairs(
+        self, pairs: list[SemanticComparisonPair]
+    ) -> list[SemanticComparisonDecision]:
+        if not pairs:
+            return []
+
+        try:
+            response = await self._client.chat.completions.create(
+                model=self._model,
+                messages=[
+                    {"role": "system", "content": SEMANTIC_DUPLICATE_SYSTEM_PROMPT},
+                    {"role": "user", "content": build_semantic_duplicate_prompt(pairs)},
+                ],
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "question_semantic_duplicate_classification",
+                        "schema": GROQ_SEMANTIC_DUPLICATE_JSON_SCHEMA,
+                        "strict": True,
+                    },
+                },
+                max_completion_tokens=min(self._max_output_tokens, 3000),
+                temperature=0,
+            )
+        except APITimeoutError as exc:
+            raise QuestionGeneratorTimeoutError(
+                "Groq semantic duplicate classification timed out"
+            ) from exc
+        except APIConnectionError as exc:
+            raise QuestionGenerationError(
+                f"Groq semantic duplicate classification failed: {exc.__class__.__name__}"
+            ) from exc
+        except APIError as exc:
+            status_code = getattr(exc, "status_code", "unknown")
+            raise QuestionGenerationError(
+                f"Groq semantic duplicate classification failed with status {status_code}"
+            ) from exc
+
+        raw_content = response.choices[0].message.content if response.choices else None
+        if not raw_content:
+            raise QuestionGeneratorValidationError(
+                "Groq returned an empty semantic duplicate response"
+            )
+        try:
+            parsed = json.loads(raw_content)
+            schema_result = GroqSemanticDuplicateSchema.model_validate(parsed)
+        except (json.JSONDecodeError, ValueError) as exc:
+            raise QuestionGeneratorValidationError(
+                "Groq semantic duplicate response failed schema validation"
+            ) from exc
+
+        valid_pair_ids = {pair.id for pair in pairs}
+        seen: set[str] = set()
+        decisions: list[SemanticComparisonDecision] = []
+        for item in schema_result.decisions:
+            if item.pair_id not in valid_pair_ids or item.pair_id in seen:
+                continue
+            seen.add(item.pair_id)
+            decisions.append(
+                SemanticComparisonDecision(
+                    pair_id=item.pair_id, classification=item.classification
+                )
+            )
+        return decisions

@@ -115,6 +115,9 @@ def build_extraction_result(
     interesting_events = _process_factual_items(
         schema_result.interesting_events, indexed_sources, _title_key
     )
+    public_appearances = _process_factual_items(
+        schema_result.public_appearances, indexed_sources, _title_key
+    )
     potential_interview_angles = _process_interview_angles(
         schema_result.potential_interview_angles, indexed_sources
     )
@@ -130,5 +133,6 @@ def build_extraction_result(
         projects=projects,
         topics=topics,
         interesting_events=interesting_events,
+        public_appearances=public_appearances,
         potential_interview_angles=potential_interview_angles,
     )

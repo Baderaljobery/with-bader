@@ -6,6 +6,14 @@ from app.research.extraction.source_selector import (
     select_sources_for_extraction,
 )
 from app.research.models import NormalizedResearchSource
+from tests.db_test_helpers import FakeGuestIdentity
+
+# These tests exercise pure ranking/selection mechanics (content richness,
+# domain diversity, max_sources), independent of identity relevance - a
+# blank guest + min_identity_relevance=0.0 disables the identity floor so
+# every candidate is eligible for ranking. IdentityFloorTests below covers
+# the floor itself.
+_BLANK_GUEST = FakeGuestIdentity()
 
 
 class SourceSelectorTests(unittest.TestCase):
@@ -17,7 +25,9 @@ class SourceSelectorTests(unittest.TestCase):
             content="Useful body text",
             metadata={"score": 0.9},
         )
-        selected = select_sources_for_extraction([weak, strong], max_sources=1)
+        selected = select_sources_for_extraction(
+            [weak, strong], _BLANK_GUEST, max_sources=1, min_identity_relevance=0.0
+        )
         self.assertEqual(selected, [strong])
 
     def test_respects_max_sources(self):
@@ -25,7 +35,9 @@ class SourceSelectorTests(unittest.TestCase):
             NormalizedResearchSource(source_type="website", url=f"https://example{i}.org/a")
             for i in range(20)
         ]
-        selected = select_sources_for_extraction(sources, max_sources=5)
+        selected = select_sources_for_extraction(
+            sources, _BLANK_GUEST, max_sources=5, min_identity_relevance=0.0
+        )
         self.assertEqual(len(selected), 5)
 
     def test_prefers_domain_diversity_before_repeats(self):
@@ -44,16 +56,52 @@ class SourceSelectorTests(unittest.TestCase):
             content="text",
             metadata={"score": 0.1},
         )
-        selected = select_sources_for_extraction(same_domain + [distinct_domain], max_sources=2)
+        selected = select_sources_for_extraction(
+            same_domain + [distinct_domain], _BLANK_GUEST, max_sources=2, min_identity_relevance=0.0
+        )
         selected_urls = {s.url for s in selected}
         self.assertIn(distinct_domain.url, selected_urls)
 
     def test_empty_input_returns_empty(self):
-        self.assertEqual(select_sources_for_extraction([], max_sources=15), [])
+        self.assertEqual(
+            select_sources_for_extraction([], _BLANK_GUEST, max_sources=15), []
+        )
 
     def test_zero_max_sources_returns_empty(self):
         sources = [NormalizedResearchSource(source_type="website", url="https://a.example/1")]
-        self.assertEqual(select_sources_for_extraction(sources, max_sources=0), [])
+        self.assertEqual(
+            select_sources_for_extraction(
+                sources, _BLANK_GUEST, max_sources=0, min_identity_relevance=0.0
+            ),
+            [],
+        )
+
+
+class IdentityFloorTests(unittest.TestCase):
+    def test_sources_below_identity_floor_are_excluded(self):
+        guest = FakeGuestIdentity(name_ar="أحمد مثال", name_en="Ahmed Example")
+        unrelated = NormalizedResearchSource(
+            source_type="website",
+            url="https://a.example/1",
+            title="Completely unrelated page",
+            content="Nothing about this guest at all.",
+        )
+        selected = select_sources_for_extraction(
+            [unrelated], guest, max_sources=5, min_identity_relevance=0.2
+        )
+        self.assertEqual(selected, [])
+
+    def test_trusted_guest_link_always_passes_the_floor(self):
+        guest = FakeGuestIdentity(name_ar="أحمد مثال", name_en="Ahmed Example")
+        trusted = NormalizedResearchSource(
+            source_type="linkedin",
+            url="https://linkedin.com/in/someone",
+            metadata={"origin": "guest_link"},
+        )
+        selected = select_sources_for_extraction(
+            [trusted], guest, max_sources=5, min_identity_relevance=0.5
+        )
+        self.assertEqual(selected, [trusted])
 
 
 class AssignSourceIdsTests(unittest.TestCase):

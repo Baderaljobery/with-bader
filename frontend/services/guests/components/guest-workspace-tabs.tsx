@@ -41,7 +41,7 @@ export function GuestWorkspaceTabs({ guestId }: { guestId: string }) {
             className={cn(
               "shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-all",
               active
-                ? "bg-white text-[#161616] shadow-[var(--shadow-soft)]"
+                ? "bg-[image:var(--gradient-primary)] text-white shadow-[0_10px_24px_-10px_rgba(27,143,234,0.55)]"
                 : "text-[#5F6368] hover:bg-white/70 hover:text-[#161616]",
             )}
           >

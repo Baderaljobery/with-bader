@@ -53,7 +53,7 @@ class GroqResearchExtractor(ResearchExtractor):
     async def extract(
         self, guest: Guest, sources: list[NormalizedResearchSource]
     ) -> ResearchExtractionResult:
-        selected = select_sources_for_extraction(sources, max_sources=self._max_sources)
+        selected = select_sources_for_extraction(sources, guest, max_sources=self._max_sources)
         indexed = assign_source_ids(selected)
 
         source_payload = [

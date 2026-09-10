@@ -8,12 +8,17 @@ import { ErrorState } from "@/components/shared/error-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGuests } from "../hooks/use-guests";
+import type { Guest } from "../types/guest";
 import { AddGuestCard } from "./add-guest-card";
 import { GuestCard } from "./guest-card";
 import { GuestListSkeleton } from "./guest-list-skeleton";
 
-function matchesQuery(guest: { name: string; job_title: string | null; company: string | null }, query: string) {
-  const haystack = [guest.name, guest.job_title, guest.company]
+// Bilingual (Phase 4) - matches both the Arabic and English name so a
+// query in either language finds the guest, regardless of which language
+// the visible card happens to be showing. company/job_title stay the
+// existing single-value fields.
+function matchesQuery(guest: Guest, query: string) {
+  const haystack = [guest.name_ar, guest.name_en, guest.name, guest.company, guest.job_title]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();

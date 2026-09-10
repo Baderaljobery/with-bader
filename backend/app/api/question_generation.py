@@ -27,7 +27,10 @@ from app.schemas.question_generation import (
     QuestionGenerationSaveResponse,
 )
 from app.services import guest_service
-from app.services.question_generation_service import save_generated_questions
+from app.services.question_generation_service import (
+    QuestionGenerationResearchMismatchError,
+    save_generated_questions,
+)
 
 router = APIRouter(prefix="/api/guests/{guest_id}/questions", tags=["question-generation"])
 
@@ -83,17 +86,23 @@ async def generate_questions(
 
     return QuestionGenerationResponse(
         guest_id=guest_id,
+        generation_run_id=result.generation_run_id,
         research_id=result.research.id,
         research_version=result.research.version,
         generator_provider=result.generator_provider,
         generator_model=result.generator_model,
         requested_count=result.requested_count,
+        candidate_count=result.candidate_count,
         generated_count=result.generated_count,
+        duplicates_filtered_count=result.duplicates_filtered_count,
+        refill_attempts=result.refill_attempts,
         questions=[
             GeneratedQuestionResponse(
+                candidate_id=q.candidate_id,
                 text=q.text,
                 topic=q.topic,
                 category=q.category,
+                intent_summary=q.intent_summary,
                 priority=q.priority,
                 research_item_ids=q.research_item_ids,
                 source_urls=q.source_urls,
@@ -118,12 +127,23 @@ def save_generated(
 ) -> QuestionGenerationSaveResponse:
     try:
         guest_service.get_guest_by_id_for_user(db, guest_id, current_user.id)
-        created = save_generated_questions(db, guest_id, request.questions)
+        result = save_generated_questions(
+            db,
+            guest_id,
+            request.questions,
+            generation_run_id=request.generation_run_id,
+            research_id=request.research_id,
+            research_version=request.research_version,
+        )
     except guest_service.GuestNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except QuestionGenerationResearchMismatchError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
     return QuestionGenerationSaveResponse(
         guest_id=guest_id,
-        saved_count=len(created),
-        questions=[QuestionResponse.model_validate(q) for q in created],
+        saved_count=len(result.created),
+        skipped_count=len(result.skipped),
+        questions=[QuestionResponse.model_validate(q) for q in result.created],
+        skipped=result.skipped,
     )

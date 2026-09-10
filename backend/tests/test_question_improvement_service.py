@@ -1,7 +1,7 @@
 import unittest
 
 from app.database.session import SessionLocal
-from app.schemas.guest import GuestCreate
+
 from app.schemas.question import QuestionCreate
 from app.services import question_service, question_version_service
 from app.services.guest_service import create_guest, delete_guest
@@ -9,15 +9,14 @@ from app.services.question_improvement_service import (
     QuestionImprovementNoChangeError,
     accept_question_improvement,
 )
-from tests.db_test_helpers import create_test_owner, delete_test_owner
-
+from tests.db_test_helpers import create_test_owner, delete_test_owner, make_guest_create
 
 class AcceptQuestionImprovementTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
         self.owner = create_test_owner(self.db)
         self.guest = create_guest(
-            self.db, GuestCreate(name="Improvement Service Test Guest"), self.owner.id
+            self.db, make_guest_create(name="Improvement Service Test Guest"), self.owner.id
         )
 
     def tearDown(self):
@@ -102,7 +101,6 @@ class AcceptQuestionImprovementTests(unittest.TestCase):
 
         versions = question_version_service.get_question_versions(self.db, question.id)
         self.assertEqual(len(versions), 2)
-
 
 if __name__ == "__main__":
     unittest.main()

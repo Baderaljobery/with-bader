@@ -83,5 +83,7 @@ async def run_guest_research(
         queries_failed=result.queries_failed,
         total_sources_found=result.total_sources_found,
         total_sources_after_deduplication=result.total_sources_after_deduplication,
+        identity_confidence=result.identity_confidence,
+        needs_identity_confirmation=result.needs_identity_confirmation,
         research=GuestResearchResponse.model_validate(result.guest_research),
     )

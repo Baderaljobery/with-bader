@@ -35,6 +35,7 @@ def _to_research_source(source: NormalizedResearchSource) -> ResearchSource:
 def build_guest_research_payload(
     extraction: ResearchExtractionResult,
     sources: list[NormalizedResearchSource],
+    identity_confidence: float | None = None,
 ) -> GuestResearchCreate:
     """Convert the extraction result + normalized sources into the payload
     shape expected by the existing guest_research storage model."""
@@ -47,7 +48,9 @@ def build_guest_research_payload(
         projects=extraction.projects,
         topics=extraction.topics,
         interesting_events=extraction.interesting_events,
+        public_appearances=extraction.public_appearances,
         potential_interview_angles=extraction.potential_interview_angles,
         sources=[_to_research_source(source) for source in sources],
+        identity_confidence=identity_confidence,
         raw_ai_response=extraction.raw_ai_response,
     )

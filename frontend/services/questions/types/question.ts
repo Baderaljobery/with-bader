@@ -15,10 +15,21 @@ export type Question = {
   source: QuestionSource;
   status: QuestionStatus;
   topic: string | null;
+  category: string | null;
+  priority: string | null;
+  intent_summary: string | null;
   position: number;
   is_important: boolean;
   is_optional: boolean;
   notes: string | null;
+  research_id: string | null;
+  research_version: number | null;
+  research_item_ids: string[];
+  source_urls: string[];
+  follow_up_questions: string[];
+  generation_reason: string | null;
+  generation_run_id: string | null;
+  generation_candidate_id: string | null;
   // Interview-tab fields - present on the response but not surfaced by the
   // Questions workspace (that's the Interview tab's job).
   spoken_question: string | null;
@@ -66,9 +77,11 @@ export type QuestionGenerationRequest = {
 };
 
 export type GeneratedQuestion = {
+  candidate_id: string;
   text: string;
   topic: string | null;
   category: string;
+  intent_summary: string;
   priority: QuestionGenerationPriority;
   research_item_ids: string[];
   source_urls: string[];
@@ -78,21 +91,41 @@ export type GeneratedQuestion = {
 
 export type QuestionGenerationResponse = {
   guest_id: string;
+  generation_run_id: string;
   research_id: string;
   research_version: number;
   generator_provider: string;
   generator_model: string | null;
   requested_count: number;
+  candidate_count: number;
   generated_count: number;
+  duplicates_filtered_count: number;
+  refill_attempts: number;
   questions: GeneratedQuestion[];
 };
 
 export type SelectedGeneratedQuestion = GeneratedQuestion;
 
+export type QuestionGenerationSaveRequest = {
+  generation_run_id: string;
+  research_id: string;
+  research_version: number;
+  questions: GeneratedQuestion[];
+};
+
+export type SkippedGeneratedQuestion = {
+  candidate_id: string | null;
+  text: string;
+  reason: "already_saved" | "exact_duplicate" | "semantic_duplicate" | "concurrent_duplicate";
+  duplicate_of_question_id: string | null;
+};
+
 export type QuestionGenerationSaveResponse = {
   guest_id: string;
   saved_count: number;
+  skipped_count: number;
   questions: Question[];
+  skipped: SkippedGeneratedQuestion[];
 };
 
 // --- Improvement ---

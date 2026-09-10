@@ -27,9 +27,11 @@ class QuestionGenerationRequest(BaseModel):
 
 
 class GeneratedQuestionResponse(BaseModel):
+    candidate_id: uuid.UUID
     text: str
     topic: str | None = None
     category: str
+    intent_summary: str
     priority: QuestionGenerationPriority = "medium"
     research_item_ids: list[str] = Field(default_factory=list)
     source_urls: list[str] = Field(default_factory=list)
@@ -39,12 +41,16 @@ class GeneratedQuestionResponse(BaseModel):
 
 class QuestionGenerationResponse(BaseModel):
     guest_id: uuid.UUID
+    generation_run_id: uuid.UUID
     research_id: uuid.UUID
     research_version: int
     generator_provider: str
     generator_model: str | None = None
     requested_count: int
+    candidate_count: int
     generated_count: int
+    duplicates_filtered_count: int
+    refill_attempts: int
     questions: list[GeneratedQuestionResponse]
 
 
@@ -55,9 +61,11 @@ class SelectedGeneratedQuestion(BaseModel):
     the client can round-trip the full preview payload, but are not yet
     stored with the row."""
 
+    candidate_id: uuid.UUID | None = None
     text: str = Field(min_length=1)
     topic: str | None = None
     category: str | None = None
+    intent_summary: str | None = None
     priority: QuestionGenerationPriority | None = None
     research_item_ids: list[str] = Field(default_factory=list)
     source_urls: list[str] = Field(default_factory=list)
@@ -67,9 +75,26 @@ class SelectedGeneratedQuestion(BaseModel):
 
 class QuestionGenerationSaveRequest(BaseModel):
     questions: list[SelectedGeneratedQuestion] = Field(min_length=1)
+    generation_run_id: uuid.UUID | None = None
+    research_id: uuid.UUID | None = None
+    research_version: int | None = None
+
+
+class SkippedGeneratedQuestion(BaseModel):
+    candidate_id: uuid.UUID | None = None
+    text: str
+    reason: Literal[
+        "already_saved",
+        "exact_duplicate",
+        "semantic_duplicate",
+        "concurrent_duplicate",
+    ]
+    duplicate_of_question_id: uuid.UUID | None = None
 
 
 class QuestionGenerationSaveResponse(BaseModel):
     guest_id: uuid.UUID
     saved_count: int
+    skipped_count: int = 0
     questions: list[QuestionResponse]
+    skipped: list[SkippedGeneratedQuestion] = Field(default_factory=list)

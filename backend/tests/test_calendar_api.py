@@ -1,22 +1,20 @@
 import unittest
 
 from app.database.session import SessionLocal
-from app.schemas.guest import GuestCreate
+
 from app.services.guest_service import create_guest, delete_guest
 from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
+from tests.db_test_helpers import make_guest_create
 
 client = make_authenticated_client()
-
 
 def _events(start: str, end: str) -> list[dict]:
     response = client.get("/api/calendar/events", params={"start": start, "end": end})
     assert response.status_code == 200
     return response.json()
 
-
 def _event_for(events: list[dict], guest_id) -> dict | None:
     return next((event for event in events if event["guest_id"] == str(guest_id)), None)
-
 
 class CalendarApiTests(unittest.TestCase):
     """Assertions look up a specific fixture's own guest_id within the
@@ -36,7 +34,7 @@ class CalendarApiTests(unittest.TestCase):
     def _make_guest(self, name, scheduled_at=None, location=None):
         guest = create_guest(
             self.db,
-            GuestCreate(
+            make_guest_create(
                 name=name,
                 interview_scheduled_at=scheduled_at,
                 interview_location=location,
@@ -87,10 +85,8 @@ class CalendarApiTests(unittest.TestCase):
         self.assertIsNotNone(event)
         self.assertIsNone(event["location"])
 
-
 if __name__ == "__main__":
     unittest.main()
-
 
 def tearDownModule():
     cleanup_client_user(client)

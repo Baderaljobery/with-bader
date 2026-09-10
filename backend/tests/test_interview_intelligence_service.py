@@ -8,12 +8,11 @@ from app.interview_intelligence.models import (
     QuestionContext,
 )
 from app.interview_intelligence.service import InterviewIntelligenceService
-from app.schemas.guest import GuestCreate
+
 from app.schemas.question import QuestionAnswerUpdate, QuestionCreate
 from app.services import question_service
 from app.services.guest_service import create_guest, delete_guest
-from tests.db_test_helpers import create_test_owner, delete_test_owner
-
+from tests.db_test_helpers import create_test_owner, delete_test_owner, make_guest_create
 
 class _ScriptedMatcher(QuestionAnswerMatcher):
     """Returns exactly the matches given, keyed by ref - lets tests control
@@ -29,13 +28,12 @@ class _ScriptedMatcher(QuestionAnswerMatcher):
         self.received_questions = questions
         return QuestionAnswerMatchResult(matches=self._matches, raw_ai_response=None)
 
-
 class InterviewIntelligenceServiceTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.db = SessionLocal()
         self.owner = create_test_owner(self.db)
         self.guest = create_guest(
-            self.db, GuestCreate(name="Matching Service Test Guest"), self.owner.id
+            self.db, make_guest_create(name="Matching Service Test Guest"), self.owner.id
         )
 
     def tearDown(self):
@@ -249,7 +247,6 @@ class InterviewIntelligenceServiceTests(unittest.IsolatedAsyncioTestCase):
         service = InterviewIntelligenceService(matcher=matcher)
         self.assertEqual(service.matcher_provider, "groq")
         self.assertEqual(service.matcher_model, "openai/gpt-oss-20b")
-
 
 if __name__ == "__main__":
     unittest.main()

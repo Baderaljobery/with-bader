@@ -69,6 +69,17 @@ export type InterestingEventItem = {
   confidence?: number | null;
 };
 
+export type PublicAppearanceItem = {
+  title: string;
+  appearance_type?: string | null;
+  venue?: string | null;
+  date?: string | null;
+  description?: string | null;
+  source_ids?: string[];
+  source_urls?: string[];
+  confidence?: number | null;
+};
+
 export type InterviewAnglePriority = "low" | "medium" | "high";
 
 export type InterviewAngleItem = {
@@ -91,8 +102,10 @@ export type GuestResearch = {
   projects: ProjectItem[];
   topics: string[];
   interesting_events: InterestingEventItem[];
+  public_appearances: PublicAppearanceItem[];
   potential_interview_angles: InterviewAngleItem[];
   sources: ResearchSource[];
+  identity_confidence?: number | null;
   raw_ai_response: unknown;
   created_at: string;
 };
@@ -111,5 +124,7 @@ export type GuestResearchRunResponse = {
   queries_failed: number;
   total_sources_found: number;
   total_sources_after_deduplication: number;
+  identity_confidence?: number;
+  needs_identity_confirmation?: boolean;
   research: GuestResearch;
 };

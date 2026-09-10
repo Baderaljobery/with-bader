@@ -1,8 +1,9 @@
 "use client";
 
-import { Loader2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { AnimatedLogo } from "@/components/brand/animated-logo";
 import { ErrorState } from "@/components/shared/error-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -93,7 +94,7 @@ export default function CalendarPage() {
         <ErrorState description="تعذر تحميل مواعيد المقابلات." onRetry={() => refetch()} />
       ) : isPending ? (
         <div className="flex items-center justify-center rounded-2xl border border-dashed border-border bg-secondary/30 py-24">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+          <AnimatedLogo markOnly className="size-12" />
         </div>
       ) : (
         <CalendarGrid

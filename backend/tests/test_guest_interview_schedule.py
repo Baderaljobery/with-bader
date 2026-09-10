@@ -2,13 +2,13 @@ import unittest
 
 from app.database.session import SessionLocal
 from app.main import app
-from app.schemas.guest import GuestCreate
+
 from app.services.guest_service import create_guest, delete_guest
 
 from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
+from tests.db_test_helpers import make_guest_create
 
 client = make_authenticated_client()
-
 
 class GuestInterviewScheduleTests(unittest.TestCase):
     """Scheduling/rescheduling/canceling a guest's interview reuses the
@@ -17,7 +17,7 @@ class GuestInterviewScheduleTests(unittest.TestCase):
 
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="ضيف اختبار الجدولة"), created_by=client.user_id)
+        self.guest = create_guest(self.db, make_guest_create(name="ضيف اختبار الجدولة"), created_by=client.user_id)
 
     def tearDown(self):
         delete_guest(self.db, self.guest.id)
@@ -66,10 +66,8 @@ class GuestInterviewScheduleTests(unittest.TestCase):
         self.assertIsNone(body["interview_scheduled_at"])
         self.assertIsNone(body["interview_location"])
 
-
 if __name__ == "__main__":
     unittest.main()
-
 
 def tearDownModule():
     cleanup_client_user(client)

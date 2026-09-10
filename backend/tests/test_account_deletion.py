@@ -7,10 +7,10 @@ import unittest
 from app.database.session import SessionLocal
 from app.models.user import User
 from app.schemas.content_draft import ContentDraftCreate
-from app.schemas.guest import GuestCreate
+
 from app.services import content_service, guest_service
 from tests.auth_test_helpers import make_authenticated_client
-
+from tests.db_test_helpers import make_guest_create
 
 class AccountDeletionTests(unittest.TestCase):
     def setUp(self):
@@ -19,13 +19,13 @@ class AccountDeletionTests(unittest.TestCase):
         self.client_b = make_authenticated_client("User B - must survive")
 
         self.guest_a = guest_service.create_guest(
-            self.db, GuestCreate(name="ضيف المستخدم أ"), created_by=self.client_a.user_id
+            self.db, make_guest_create(name="ضيف المستخدم أ"), created_by=self.client_a.user_id
         )
         self.draft_a = content_service.create_content_draft(
             self.db, self.guest_a.id, ContentDraftCreate(platform="linkedin", length="short", content="محتوى أ")
         )
         self.guest_b = guest_service.create_guest(
-            self.db, GuestCreate(name="ضيف المستخدم ب"), created_by=self.client_b.user_id
+            self.db, make_guest_create(name="ضيف المستخدم ب"), created_by=self.client_b.user_id
         )
 
     def tearDown(self):
@@ -89,7 +89,6 @@ class AccountDeletionTests(unittest.TestCase):
 
         me_response = self.client_b.get("/api/auth/me")
         self.assertEqual(me_response.status_code, 200)
-
 
 if __name__ == "__main__":
     unittest.main()

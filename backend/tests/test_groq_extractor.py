@@ -20,6 +20,12 @@ class _FakeGuest:
         self.name = name
         self.job_title = job_title
         self.company = company
+        # Bilingual name - app/research/identity_resolution.py and
+        # app/research/extraction/prompts.py read these directly (a real
+        # Guest always has them, possibly None).
+        self.name_ar = name
+        self.name_en = name
+        self.biography = None
 
 
 def _make_response(payload: dict, usage: bool = True):
@@ -74,8 +80,12 @@ class GroqExtractorTests(unittest.IsolatedAsyncioTestCase):
                 source_type="website",
                 url="https://example.org/a",
                 canonical_url="https://example.org/a",
-                title="A source",
-                content="Some evidence text.",
+                # Mentions the guest's name so it clears the identity-relevance
+                # floor (app/research/identity_resolution.py) like a real
+                # matched source would - these tests are about extraction
+                # mechanics, not identity filtering.
+                title="Test Guest source",
+                content="Some evidence text about Test Guest.",
             )
         ]
 

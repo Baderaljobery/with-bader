@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.question import Question
+from app.questions.generation.similarity import normalized_question_hash
 from app.schemas.question import QuestionAnswerUpdate, QuestionCreate, QuestionUpdate
 from app.services.guest_service import get_guest_by_id
 
@@ -20,6 +21,8 @@ def create_question(db: Session, guest_id: uuid.UUID, question_in: QuestionCreat
     data["text_"] = data.pop("text")
 
     question = Question(guest_id=guest_id, **data)
+    if question.source == "ai_generated":
+        question.ai_normalized_text_hash = normalized_question_hash(question.text_)
     db.add(question)
     db.commit()
     db.refresh(question)
@@ -80,6 +83,12 @@ def update_question(db: Session, question_id: uuid.UUID, question_in: QuestionUp
 
     for field, value in updates.items():
         setattr(question, field, value)
+
+    question.ai_normalized_text_hash = (
+        normalized_question_hash(question.text_)
+        if question.source == "ai_generated"
+        else None
+    )
 
     db.commit()
     db.refresh(question)

@@ -3,21 +3,21 @@ import unittest
 from app.database.session import SessionLocal
 from app.main import app
 from app.schemas.block import BlockCreate
-from app.schemas.guest import GuestCreate
+
 from app.schemas.notebook import NotebookCreate
 from app.schemas.notebook_page import NotebookPageCreate
 from app.services import block_service, notebook_page_service, notebook_service
 from app.services.guest_service import create_guest, delete_guest
 
 from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
+from tests.db_test_helpers import make_guest_create
 
 client = make_authenticated_client()
-
 
 class GuestNotebookBlocksTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Guest Notebook Blocks Test Guest"), created_by=client.user_id)
+        self.guest = create_guest(self.db, make_guest_create(name="Guest Notebook Blocks Test Guest"), created_by=client.user_id)
         self.notebook = notebook_service.create_notebook(self.db, self.guest.id, NotebookCreate(title="N"))
         self.page = notebook_page_service.create_notebook_page(
             self.db, self.notebook.id, NotebookPageCreate(title="P", position=0)
@@ -47,7 +47,7 @@ class GuestNotebookBlocksTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_blocks_from_other_guests_are_excluded(self):
-        other_guest = create_guest(self.db, GuestCreate(name="Other Guest"), created_by=client.user_id)
+        other_guest = create_guest(self.db, make_guest_create(name="Other Guest"), created_by=client.user_id)
         try:
             other_notebook = notebook_service.create_notebook(self.db, other_guest.id, NotebookCreate(title="N2"))
             other_page = notebook_page_service.create_notebook_page(
@@ -61,10 +61,8 @@ class GuestNotebookBlocksTests(unittest.TestCase):
         finally:
             delete_guest(self.db, other_guest.id)
 
-
 if __name__ == "__main__":
     unittest.main()
-
 
 def tearDownModule():
     cleanup_client_user(client)

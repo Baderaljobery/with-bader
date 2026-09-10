@@ -6,26 +6,24 @@ from app.design_planning.mock import MockSlidePlanner
 from app.database.session import SessionLocal
 from app.main import app
 from app.schemas.content_draft import ContentDraftCreate
-from app.schemas.guest import GuestCreate
+
 from app.services import content_service, design_service
 from app.services.guest_service import create_guest, delete_guest
 from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
+from tests.db_test_helpers import make_guest_create
 
 client = make_authenticated_client()
-
 
 def _override_dependencies():
     app.dependency_overrides[_resolve_planner] = lambda: DesignContentPlanner(planner=MockSlidePlanner())
 
-
 def _clear_overrides():
     app.dependency_overrides.pop(_resolve_planner, None)
-
 
 class DesignPlanApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Design Plan API Test Guest"), created_by=client.user_id)
+        self.guest = create_guest(self.db, make_guest_create(name="Design Plan API Test Guest"), created_by=client.user_id)
         self.content_draft = content_service.create_content_draft(
             self.db,
             self.guest.id,
@@ -107,12 +105,11 @@ class DesignPlanApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()["slides"]), 1)
 
-
 class DesignCreateAndLifecycleApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Design Lifecycle API Test Guest"), created_by=client.user_id)
-        self.other_guest = create_guest(self.db, GuestCreate(name="Other Design Guest"), created_by=client.user_id)
+        self.guest = create_guest(self.db, make_guest_create(name="Design Lifecycle API Test Guest"), created_by=client.user_id)
+        self.other_guest = create_guest(self.db, make_guest_create(name="Other Design Guest"), created_by=client.user_id)
         self.content_draft = content_service.create_content_draft(
             self.db,
             self.guest.id,
@@ -276,10 +273,8 @@ class DesignCreateAndLifecycleApiTests(unittest.TestCase):
         indices = [s["slide_index"] for s in response.json()["slides"]]
         self.assertEqual(indices, [1, 2, 3])
 
-
 if __name__ == "__main__":
     unittest.main()
-
 
 def tearDownModule():
     cleanup_client_user(client)

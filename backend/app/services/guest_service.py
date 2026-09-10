@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.guest import Guest
-from app.schemas.guest import GuestCreate, GuestUpdate
+from app.schemas.guest import _BILINGUAL_IDENTITY_FIELDS, GuestCreate, GuestUpdate
 
 
 class GuestNotFoundError(Exception):
@@ -16,6 +16,25 @@ class GuestNotFoundError(Exception):
 
 class DuplicateSlugError(Exception):
     """Raised when a guest slug is already in use."""
+
+
+class IncompleteBilingualIdentityError(Exception):
+    """Raised when an update would leave the guest with only one of
+    name_ar/name_en populated - either both or neither, never half
+    (Phase: legacy data / migration safety)."""
+
+    def __init__(self, missing_fields: list[str]) -> None:
+        self.missing_fields = missing_fields
+        super().__init__(
+            "Updating a guest's bilingual name requires both name_ar and name_en; "
+            f"missing: {', '.join(missing_fields)}"
+        )
+
+
+def has_complete_bilingual_identity(guest: Guest) -> bool:
+    """Whether both name_ar and name_en are populated - used both for the
+    legacy-upgrade check below and for the Research tab's readiness summary."""
+    return all((getattr(guest, field) or "").strip() for field in _BILINGUAL_IDENTITY_FIELDS)
 
 
 def _auto_content_status(guest: Guest) -> str:
@@ -85,8 +104,23 @@ def update_guest(db: Session, guest_id: uuid.UUID, guest_in: GuestUpdate) -> Gue
     manual_status = updates.pop("content_status", None)
     manual_flag = updates.pop("content_status_manual", None)
 
+    touches_bilingual_identity = any(field in updates for field in _BILINGUAL_IDENTITY_FIELDS)
+
     for field, value in updates.items():
         setattr(guest, field, value)
+
+    # Legacy data / migration safety: a legacy guest may be missing the
+    # bilingual profile entirely (nullable at the DB level), which is fine
+    # as long as nobody touches it. The moment an edit starts filling it in,
+    # the full set is required together - a half-filled profile is worse
+    # than none for the research planner/identity resolution that depend on
+    # it, and silently accepting it would let validation quietly weaken.
+    if touches_bilingual_identity and not has_complete_bilingual_identity(guest):
+        missing = [
+            field for field in _BILINGUAL_IDENTITY_FIELDS if not (getattr(guest, field) or "").strip()
+        ]
+        db.rollback()
+        raise IncompleteBilingualIdentityError(missing)
 
     if manual_status is not None:
         guest.content_status = manual_status

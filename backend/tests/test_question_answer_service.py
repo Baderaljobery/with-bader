@@ -1,19 +1,18 @@
 import unittest
 
 from app.database.session import SessionLocal
-from app.schemas.guest import GuestCreate
+
 from app.schemas.question import QuestionAnswerUpdate, QuestionCreate
 from app.services import question_service
 from app.services.guest_service import create_guest, delete_guest
-from tests.db_test_helpers import create_test_owner, delete_test_owner
-
+from tests.db_test_helpers import create_test_owner, delete_test_owner, make_guest_create
 
 class ManualAnswerServiceTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
         self.owner = create_test_owner(self.db)
         self.guest = create_guest(
-            self.db, GuestCreate(name="Answer Service Test Guest"), self.owner.id
+            self.db, make_guest_create(name="Answer Service Test Guest"), self.owner.id
         )
         self.question = question_service.create_question(
             self.db, self.guest.id, QuestionCreate(text="What was your biggest challenge?")
@@ -103,7 +102,6 @@ class ManualAnswerServiceTests(unittest.TestCase):
         )
         self.assertEqual(updated.answer_source, "manual")
         self.assertEqual(updated.source, "ai_generated")  # question's own source untouched
-
 
 if __name__ == "__main__":
     unittest.main()

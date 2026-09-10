@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { BrandLoader } from "@/components/brand/brand-loader";
 import { ErrorState } from "@/components/shared/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGuest } from "@/services/guests/hooks/use-guest";
@@ -58,7 +59,12 @@ export default function GuestResearchPage() {
 
   if (latest.isError) {
     if (latest.error instanceof ApiError && latest.error.status === 404) {
-      return <ResearchEmptyState onStart={handleRun} isPending={runResearch.isPending} />;
+      if (!guest) {
+        return <BrandLoader loading variant="section" />;
+      }
+      return (
+        <ResearchEmptyState guest={guest} onStart={handleRun} isPending={runResearch.isPending} />
+      );
     }
 
     return (

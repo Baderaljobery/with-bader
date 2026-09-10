@@ -16,15 +16,15 @@ from app.interview_intelligence.models import (
 )
 from app.interview_intelligence.service import InterviewIntelligenceService
 from app.main import app
-from app.schemas.guest import GuestCreate
+
 from app.schemas.question import QuestionAnswerUpdate, QuestionCreate
 from app.services import question_service
 from app.services.guest_service import create_guest, delete_guest
 
 from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
+from tests.db_test_helpers import make_guest_create
 
 client = make_authenticated_client()
-
 
 class _FakeSTTProvider:
     provider_name = "fake"
@@ -38,7 +38,6 @@ class _FakeSTTProvider:
             text=self._text, provider="groq", model="fake-groq-model", language="ar"
         )
 
-
 class _ScriptedMatcher(QuestionAnswerMatcher):
     provider_name = "scripted"
 
@@ -48,7 +47,6 @@ class _ScriptedMatcher(QuestionAnswerMatcher):
     async def match(self, transcript, questions):
         return QuestionAnswerMatchResult(matches=self._matches, raw_ai_response=None)
 
-
 def _override_services(transcript_text="transcribed text", matches=None):
     app.dependency_overrides[_resolve_stt_service] = lambda: SpeechToTextService(
         provider=_FakeSTTProvider(text=transcript_text)
@@ -57,16 +55,14 @@ def _override_services(transcript_text="transcribed text", matches=None):
         matcher=_ScriptedMatcher(matches or [])
     )
 
-
 def _clear_overrides():
     app.dependency_overrides.pop(_resolve_stt_service, None)
     app.dependency_overrides.pop(_resolve_matcher_service, None)
 
-
 class TranscribeInterviewApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Interview API Test Guest"), created_by=client.user_id)
+        self.guest = create_guest(self.db, make_guest_create(name="Interview API Test Guest"), created_by=client.user_id)
 
     def tearDown(self):
         _clear_overrides()
@@ -174,11 +170,10 @@ class TranscribeInterviewApiTests(unittest.TestCase):
             exa_mock.assert_not_called()
             tavily_mock.assert_not_called()
 
-
 class TranscriptApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Transcript API Test Guest"), created_by=client.user_id)
+        self.guest = create_guest(self.db, make_guest_create(name="Transcript API Test Guest"), created_by=client.user_id)
 
     def tearDown(self):
         _clear_overrides()
@@ -227,11 +222,10 @@ class TranscriptApiTests(unittest.TestCase):
         after = question_service.get_question_by_id(self.db, question.id).answer_status
         self.assertEqual(before, after)
 
-
 class MatchAnswersApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Match Answers API Test Guest"), created_by=client.user_id)
+        self.guest = create_guest(self.db, make_guest_create(name="Match Answers API Test Guest"), created_by=client.user_id)
 
     def tearDown(self):
         _clear_overrides()
@@ -273,11 +267,10 @@ class MatchAnswersApiTests(unittest.TestCase):
         self.assertEqual(body["matcher_provider"], "scripted")
         self.assertIsNone(body["matcher_model"])
 
-
 class ManualAnswerApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Manual Answer API Test Guest"), created_by=client.user_id)
+        self.guest = create_guest(self.db, make_guest_create(name="Manual Answer API Test Guest"), created_by=client.user_id)
         self.question = question_service.create_question(
             self.db, self.guest.id, QuestionCreate(text="A question?")
         )
@@ -308,7 +301,6 @@ class ManualAnswerApiTests(unittest.TestCase):
         response = client.patch(f"/api/questions/{fake_id}/answer", json={"answer": "x"})
         self.assertEqual(response.status_code, 404)
 
-
 def _groq_patcher(payload: dict):
     """Same mocking pattern as tests/test_interview_matcher.py - no real
     network call, ever."""
@@ -326,7 +318,6 @@ def _groq_patcher(payload: dict):
         return_value=MagicMock(chat=MagicMock(completions=MagicMock(create=mock_create))),
     )
 
-
 class MatcherMetadataApiTests(unittest.TestCase):
     """Covers the observability addition: matcher_provider/matcher_model on
     both /transcribe-interview and /match-answers, sourced from the real
@@ -334,7 +325,7 @@ class MatcherMetadataApiTests(unittest.TestCase):
 
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Matcher Metadata API Test Guest"), created_by=client.user_id)
+        self.guest = create_guest(self.db, make_guest_create(name="Matcher Metadata API Test Guest"), created_by=client.user_id)
         app.dependency_overrides[_resolve_stt_service] = lambda: SpeechToTextService(
             provider=_FakeSTTProvider(text="hello")
         )
@@ -401,10 +392,8 @@ class MatcherMetadataApiTests(unittest.TestCase):
         self.assertNotIn("reasoning", raw_body)
         self.assertNotIn("structured_output", raw_body)
 
-
 if __name__ == "__main__":
     unittest.main()
-
 
 def tearDownModule():
     cleanup_client_user(client)

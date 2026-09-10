@@ -13,6 +13,7 @@ class GroqGeneratedQuestionItem(BaseModel):
     text: str
     topic: str | None = None
     category: str
+    intent_summary: str = ""
     priority: Literal["low", "medium", "high"] = "medium"
     research_item_ids: list[str] = Field(default_factory=list)
     reason: str | None = None
@@ -30,4 +31,18 @@ class GroqQuestionGenerationSchema(BaseModel):
     questions: list[GroqGeneratedQuestionItem] = Field(default_factory=list)
 
 
+class GroqSemanticDuplicateDecision(BaseModel):
+    model_config = _ITEM_CONFIG
+
+    pair_id: str
+    classification: Literal["DUPLICATE", "SAME_TOPIC_DIFFERENT_ANGLE", "DIFFERENT"]
+
+
+class GroqSemanticDuplicateSchema(BaseModel):
+    model_config = _ITEM_CONFIG
+
+    decisions: list[GroqSemanticDuplicateDecision] = Field(default_factory=list)
+
+
 GROQ_QUESTION_GENERATION_JSON_SCHEMA = build_strict_json_schema(GroqQuestionGenerationSchema)
+GROQ_SEMANTIC_DUPLICATE_JSON_SCHEMA = build_strict_json_schema(GroqSemanticDuplicateSchema)

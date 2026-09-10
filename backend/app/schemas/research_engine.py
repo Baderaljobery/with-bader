@@ -19,4 +19,6 @@ class GuestResearchRunResponse(BaseModel):
     queries_failed: int
     total_sources_found: int
     total_sources_after_deduplication: int
+    identity_confidence: float = 0.0
+    needs_identity_confirmation: bool = False
     research: GuestResearchResponse

@@ -6,11 +6,10 @@ from app.design_planning.models import SlidePlanningOptions, SlideRoleSpec
 from app.design_planning.mock import MockSlidePlanner
 from app.database.session import SessionLocal
 from app.schemas.content_draft import ContentDraftCreate
-from app.schemas.guest import GuestCreate
+
 from app.services import content_service
 from app.services.guest_service import create_guest, delete_guest
-from tests.db_test_helpers import create_test_owner, delete_test_owner
-
+from tests.db_test_helpers import create_test_owner, delete_test_owner, make_guest_create
 
 def _options(**overrides):
     defaults = dict(
@@ -21,13 +20,12 @@ def _options(**overrides):
     defaults.update(overrides)
     return SlidePlanningOptions(**defaults)
 
-
 class DesignContentPlannerTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.db = SessionLocal()
         self.owner = create_test_owner(self.db)
         self.guest = create_guest(
-            self.db, GuestCreate(name="Design Content Planner Test Guest"), self.owner.id
+            self.db, make_guest_create(name="Design Content Planner Test Guest"), self.owner.id
         )
         self.planner = DesignContentPlanner(planner=MockSlidePlanner())
 
@@ -68,20 +66,18 @@ class DesignContentPlannerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(result.slides), 1)
         self.assertEqual(result.slides[0].role, "main_content")
 
-
 class RaisingPlanner(SlidePlanner):
     provider_name = "raising"
 
     async def plan(self, guest, context_items, options):
         raise AssertionError("plan() must never be called when context is insufficient")
 
-
 class DesignContentPlannerNeverCallsProviderWhenInsufficientTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.db = SessionLocal()
         self.owner = create_test_owner(self.db)
         self.guest = create_guest(
-            self.db, GuestCreate(name="Design Content Planner Guard Test Guest"), self.owner.id
+            self.db, make_guest_create(name="Design Content Planner Guard Test Guest"), self.owner.id
         )
 
     def tearDown(self):
@@ -93,7 +89,6 @@ class DesignContentPlannerNeverCallsProviderWhenInsufficientTests(unittest.Isola
         planner = DesignContentPlanner(planner=RaisingPlanner())
         with self.assertRaises(PlanContextInsufficientError):
             await planner.plan_slides(self.guest.id, self.db, None, [], [], _options())
-
 
 if __name__ == "__main__":
     unittest.main()

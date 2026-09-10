@@ -4,7 +4,7 @@ from app.content.generation.context_builder import build_content_context, has_me
 from app.core.config import settings
 from app.database.session import SessionLocal
 from app.schemas.block import BlockCreate
-from app.schemas.guest import GuestCreate
+
 from app.schemas.guest_research import GuestResearchCreate
 from app.schemas.guest_transcript import GuestTranscriptCreate
 from app.schemas.notebook import NotebookCreate
@@ -19,15 +19,14 @@ from app.services import (
     question_service,
 )
 from app.services.guest_service import create_guest, delete_guest
-from tests.db_test_helpers import create_test_owner, delete_test_owner
-
+from tests.db_test_helpers import create_test_owner, delete_test_owner, make_guest_create
 
 class ContentContextBuilderTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
         self.owner = create_test_owner(self.db)
         self.guest = create_guest(
-            self.db, GuestCreate(name="Context Builder Test Guest"), self.owner.id
+            self.db, make_guest_create(name="Context Builder Test Guest"), self.owner.id
         )
 
     def tearDown(self):
@@ -151,7 +150,6 @@ class ContentContextBuilderTests(unittest.TestCase):
         self.assertLess(categories.index("notebook"), categories.index("transcript"))
         self.assertLess(categories.index("transcript"), categories.index("research"))
         self.assertLess(categories.index("research"), categories.index("questions"))
-
 
 if __name__ == "__main__":
     unittest.main()

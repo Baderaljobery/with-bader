@@ -4,20 +4,19 @@ from datetime import date, timedelta
 from app.database.session import SessionLocal
 from app.schemas.content_draft import ContentDraftCreate
 from app.schemas.design_generation import DesignCreateRequest, DesignSlideInput
-from app.schemas.guest import GuestCreate, GuestUpdate
+from app.schemas.guest import GuestUpdate
 from app.schemas.guest_transcript import GuestTranscriptCreate
 from app.services import content_service, design_service, guest_transcript_service
 from app.services.guest_service import create_guest, delete_guest, update_guest
 from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
+from tests.db_test_helpers import make_guest_create
 
 client = make_authenticated_client()
-
 
 def _overview():
     response = client.get("/api/statistics/overview")
     assert response.status_code == 200
     return response.json()
-
 
 class StatisticsApiTests(unittest.TestCase):
     """Every assertion here compares a *delta* (before vs. after creating a
@@ -36,7 +35,7 @@ class StatisticsApiTests(unittest.TestCase):
         self.db.close()
 
     def _make_guest(self, name="ضيف اختبار الإحصائيات"):
-        guest = create_guest(self.db, GuestCreate(name=name), created_by=client.user_id)
+        guest = create_guest(self.db, make_guest_create(name=name), created_by=client.user_id)
         self.guests.append(guest)
         return guest
 
@@ -144,10 +143,8 @@ class StatisticsApiTests(unittest.TestCase):
         after = _overview()["activity"][-1]["count"]
         self.assertEqual(after, before + 1)
 
-
 if __name__ == "__main__":
     unittest.main()
-
 
 def tearDownModule():
     cleanup_client_user(client)

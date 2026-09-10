@@ -1,7 +1,7 @@
 import unittest
 
 from app.database.session import SessionLocal
-from app.schemas.guest import GuestCreate
+
 from app.schemas.guest_transcript import GuestTranscriptCreate
 from app.services import guest_transcript_service
 from app.services.guest_service import create_guest, delete_guest
@@ -9,15 +9,14 @@ from app.services.guest_transcript_service import (
     GuestTranscriptAlreadyExistsError,
     GuestTranscriptNotFoundError,
 )
-from tests.db_test_helpers import create_test_owner, delete_test_owner
-
+from tests.db_test_helpers import create_test_owner, delete_test_owner, make_guest_create
 
 class GuestTranscriptServiceTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
         self.owner = create_test_owner(self.db)
         self.guest = create_guest(
-            self.db, GuestCreate(name="Transcript Service Test Guest"), self.owner.id
+            self.db, make_guest_create(name="Transcript Service Test Guest"), self.owner.id
         )
 
     def tearDown(self):
@@ -79,7 +78,6 @@ class GuestTranscriptServiceTests(unittest.TestCase):
             guest_transcript_service.update_guest_transcript_text(
                 self.db, self.guest.id, "Some text"
             )
-
 
 if __name__ == "__main__":
     unittest.main()

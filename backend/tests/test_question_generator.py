@@ -12,7 +12,13 @@ from app.questions.generation.base import (
 )
 from app.questions.generation.groq import GroqQuestionGenerator
 from app.questions.generation.mock import MockQuestionGenerator
-from app.questions.generation.models import QuestionGenerationOptions, ResearchContextItem
+from app.questions.generation.models import (
+    ExistingQuestionItem,
+    GeneratedQuestionItem,
+    QuestionGenerationOptions,
+    ResearchContextItem,
+    SemanticComparisonPair,
+)
 
 
 class _FakeGuest:
@@ -64,6 +70,7 @@ _VALID_PAYLOAD = {
             "text": "ما الذي تغيّر في أسلوب قيادتك بعد هذا الانتقال؟",
             "topic": "leadership",
             "category": "turning_point",
+            "intent_summary": "leadership change after a career transition",
             "priority": "high",
             "research_item_ids": ["R1"],
             "reason": "Grounded in career history",
@@ -83,6 +90,9 @@ class GroqQuestionGeneratorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(result.questions), 1)
         question = result.questions[0]
         self.assertEqual(question.source_urls, ["https://example.org/a"])
+        self.assertEqual(
+            question.intent_summary, "leadership change after a career transition"
+        )
         self.assertEqual(result.raw_ai_response["provider"], "groq")
         self.assertEqual(result.raw_ai_response["model"], "openai/gpt-oss-20b")
         self.assertNotIn("reasoning", result.raw_ai_response)
@@ -199,6 +209,69 @@ class GroqQuestionGeneratorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.questions, [])
         _, kwargs = mock_create.call_args
         self.assertIn("no research items are available", kwargs["messages"][1]["content"])
+
+    async def test_existing_manual_and_ai_questions_are_in_prompt(self):
+        existing = [
+            ExistingQuestionItem(id="Q1", text="Manual covered?", source="manual"),
+            ExistingQuestionItem(
+                id="Q2",
+                text="AI covered?",
+                source="ai_generated",
+                intent_summary="covered AI angle",
+            ),
+        ]
+        patcher, mock_create = _patch_create(return_value=_make_response(_VALID_PAYLOAD))
+        with patcher:
+            generator = GroqQuestionGenerator(api_key="fake-key", model="test-model")
+            await generator.generate(
+                _FakeGuest(), _research_items(), _options(), existing
+            )
+        prompt = mock_create.call_args.kwargs["messages"][1]["content"]
+        self.assertIn("Manual covered?", prompt)
+        self.assertIn("AI covered?", prompt)
+        self.assertIn("covered_intent=covered AI angle", prompt)
+
+    async def test_semantic_pairs_are_classified_in_one_bounded_call(self):
+        payload = {
+            "decisions": [
+                {
+                    "pair_id": "P1",
+                    "classification": "SAME_TOPIC_DIFFERENT_ANGLE",
+                },
+                {"pair_id": "P2", "classification": "DUPLICATE"},
+            ]
+        }
+        pairs = [
+            SemanticComparisonPair(
+                id=f"P{index}",
+                candidate=GeneratedQuestionItem(
+                    text=f"Candidate {index}?",
+                    topic="research",
+                    category="research",
+                    intent_summary=f"candidate intent {index}",
+                ),
+                reference=ExistingQuestionItem(
+                    id=f"Q{index}",
+                    text=f"Reference {index}?",
+                    topic="research",
+                    intent_summary=f"reference intent {index}",
+                ),
+            )
+            for index in (1, 2)
+        ]
+        patcher, mock_create = _patch_create(return_value=_make_response(payload))
+        with patcher:
+            generator = GroqQuestionGenerator(api_key="fake-key", model="test-model")
+            decisions = await generator.classify_duplicate_pairs(pairs)
+        self.assertEqual(mock_create.await_count, 1)
+        self.assertEqual([item.classification for item in decisions], [
+            "SAME_TOPIC_DIFFERENT_ANGLE",
+            "DUPLICATE",
+        ])
+        kwargs = mock_create.call_args.kwargs
+        self.assertEqual(kwargs["temperature"], 0)
+        for forbidden in ("tools", "tool_choice", "search_settings", "documents"):
+            self.assertNotIn(forbidden, kwargs)
 
 
 class MockQuestionGeneratorTests(unittest.IsolatedAsyncioTestCase):

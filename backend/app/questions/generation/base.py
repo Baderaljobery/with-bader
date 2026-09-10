@@ -2,9 +2,12 @@ from abc import ABC, abstractmethod
 
 from app.models.guest import Guest
 from app.questions.generation.models import (
+    ExistingQuestionItem,
     QuestionGenerationOptions,
     QuestionGenerationResult,
     ResearchContextItem,
+    SemanticComparisonDecision,
+    SemanticComparisonPair,
 )
 
 
@@ -44,5 +47,13 @@ class QuestionGenerator(ABC):
         guest: Guest,
         research_items: list[ResearchContextItem],
         options: QuestionGenerationOptions,
+        existing_questions: list[ExistingQuestionItem] | None = None,
     ) -> QuestionGenerationResult:
         raise NotImplementedError
+
+    async def classify_duplicate_pairs(
+        self, pairs: list[SemanticComparisonPair]
+    ) -> list[SemanticComparisonDecision]:
+        """Optional bounded semantic layer. Non-AI/test generators safely
+        fall back to the deterministic exact/lexical/intent checks."""
+        return []

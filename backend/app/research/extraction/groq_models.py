@@ -61,7 +61,28 @@ class InterestingEventItem(BaseModel):
     confidence: float | None = Field(default=None, ge=0, le=1)
 
 
+class PublicAppearanceItem(BaseModel):
+    """Prior public activity - an interview, podcast, panel, keynote,
+    conference talk, or article quoting the guest - that happened BEFORE
+    this research run. Never the future With Bader interview itself."""
+
+    model_config = _ITEM_CONFIG
+
+    title: str
+    appearance_type: str | None = None  # e.g. "interview", "podcast", "panel", "keynote", "article"
+    venue: str | None = None
+    date: str | None = None
+    description: str | None = None
+    source_ids: list[str] = Field(default_factory=list)
+    confidence: float | None = Field(default=None, ge=0, le=1)
+
+
 class InterviewAngleItem(BaseModel):
+    """A potential area worth exploring later when preparing interview
+    questions - an observation or pattern, NEVER a literal question. E.g.
+    "His move from Company A to Company B may be worth exploring" is
+    correct; "Why did you leave Company A?" is not."""
+
     model_config = _ITEM_CONFIG
 
     title: str
@@ -86,6 +107,7 @@ class GroqExtractionSchema(BaseModel):
     projects: list[ProjectItem] = Field(default_factory=list)
     topics: list[str] = Field(default_factory=list)
     interesting_events: list[InterestingEventItem] = Field(default_factory=list)
+    public_appearances: list[PublicAppearanceItem] = Field(default_factory=list)
     potential_interview_angles: list[InterviewAngleItem] = Field(default_factory=list)
 
 

@@ -31,8 +31,10 @@ class GuestResearchCreate(BaseModel):
     projects: list[Any] = Field(default_factory=list)
     topics: list[Any] = Field(default_factory=list)
     interesting_events: list[Any] = Field(default_factory=list)
+    public_appearances: list[Any] = Field(default_factory=list)
     potential_interview_angles: list[Any] = Field(default_factory=list)
     sources: list[ResearchSource] = Field(default_factory=list)
+    identity_confidence: float | None = None
     raw_ai_response: dict[str, Any] | list[Any] | None = None
 
 
@@ -50,7 +52,9 @@ class GuestResearchResponse(BaseModel):
     projects: list[Any]
     topics: list[Any]
     interesting_events: list[Any]
+    public_appearances: list[Any] = Field(default_factory=list)
     potential_interview_angles: list[Any]
     sources: list[Any]
+    identity_confidence: float | None = None
     raw_ai_response: dict[str, Any] | list[Any] | None = None
     created_at: datetime

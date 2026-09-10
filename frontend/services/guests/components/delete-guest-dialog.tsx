@@ -42,7 +42,7 @@ export function DeleteGuestDialog({ open, onOpenChange, guest, onDeleted }: Dele
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>حذف {guest.name}؟</AlertDialogTitle>
+          <AlertDialogTitle>حذف {guest.display_name}؟</AlertDialogTitle>
           <AlertDialogDescription>
             سيتم حذف هذا الضيف نهائيًا مع كل ما يرتبط به (البحث، الأسئلة، وبيانات المقابلة).
             لا يمكن التراجع عن هذا الإجراء.

@@ -5,28 +5,26 @@ from app.api.question_improvement import _resolve_improver
 from app.database.session import SessionLocal
 from app.main import app
 from app.questions.improvement.mock import MockQuestionImprover
-from app.schemas.guest import GuestCreate
+
 from app.schemas.question import QuestionCreate
 from app.services import question_service, question_version_service
 from app.services.guest_service import create_guest, delete_guest
 
 from tests.auth_test_helpers import cleanup_client_user, make_authenticated_client
+from tests.db_test_helpers import make_guest_create
 
 client = make_authenticated_client()
-
 
 def _override_with_mock_improver():
     app.dependency_overrides[_resolve_improver] = lambda: MockQuestionImprover()
 
-
 def _clear_overrides():
     app.dependency_overrides.pop(_resolve_improver, None)
-
 
 class QuestionImprovementPreviewApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Improve API Test Guest"), created_by=client.user_id)
+        self.guest = create_guest(self.db, make_guest_create(name="Improve API Test Guest"), created_by=client.user_id)
         self.question = question_service.create_question(
             self.db, self.guest.id, QuestionCreate(text="What was your biggest challenge?")
         )
@@ -107,11 +105,10 @@ class QuestionImprovementPreviewApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()["improved_text"].endswith("؟"))
 
-
 class QuestionImprovementAcceptApiTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
-        self.guest = create_guest(self.db, GuestCreate(name="Improve Accept API Test Guest"), created_by=client.user_id)
+        self.guest = create_guest(self.db, make_guest_create(name="Improve Accept API Test Guest"), created_by=client.user_id)
 
     def tearDown(self):
         delete_guest(self.db, self.guest.id)
@@ -171,10 +168,8 @@ class QuestionImprovementAcceptApiTests(unittest.TestCase):
         self.assertEqual(versions[0].source, "ai_generated")
         self.assertEqual(versions[1].source, "ai_improved")
 
-
 if __name__ == "__main__":
     unittest.main()
-
 
 def tearDownModule():
     cleanup_client_user(client)

@@ -1,10 +1,10 @@
 import { apiClient } from "@/lib/api/client";
 import type {
-  GeneratedQuestion,
   Question,
   QuestionCreateInput,
   QuestionGenerationRequest,
   QuestionGenerationResponse,
+  QuestionGenerationSaveRequest,
   QuestionGenerationSaveResponse,
   QuestionImprovementPreview,
   QuestionImprovementRequest,
@@ -36,11 +36,11 @@ export const questionsApi = {
 
   saveGenerated: (
     guestId: string,
-    questions: GeneratedQuestion[],
+    request: QuestionGenerationSaveRequest,
   ): Promise<QuestionGenerationSaveResponse> =>
     apiClient.post<QuestionGenerationSaveResponse>(
       `/api/guests/${guestId}/questions/generated/save`,
-      { questions },
+      request,
     ),
 
   improve: (

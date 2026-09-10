@@ -36,8 +36,21 @@ class Settings(BaseSettings):
     ai_rate_limit: int = Field(default=30, ge=1)
     ai_rate_window_seconds: int = Field(default=60, ge=1)
 
-    research_max_queries: int = 8
+    # Adaptive search budget (Phase 10): research_max_queries is now the hard
+    # ceiling a single run will never exceed regardless of guest profile
+    # richness; research_min_queries is the floor for a very thin profile.
+    # app/research/collectors/query_builder.py.estimate_query_budget picks
+    # the actual per-guest budget between the two. Raised from the previous
+    # flat 8 to accommodate a genuinely richer, bilingual guest.
+    research_max_queries: int = 16
+    research_min_queries: int = 6
     research_results_per_query: int = 5
+
+    # Hybrid research planner (Phase 8): the deterministic queries
+    # (query_builder.py) always run; this only toggles the bounded
+    # AI-assisted query expansion on top of them (app/research/research_planner.py).
+    # Off entirely (e.g. in tests) leaves the deterministic-only behavior.
+    research_planner_enabled: bool = True
 
     research_search_provider: str = "mock"
     research_fallback_provider: str | None = None
@@ -46,11 +59,45 @@ class Settings(BaseSettings):
     tavily_api_key: str | None = None
     exa_api_key: str | None = None
 
+    # Quality-based Tavily fallback (Phase 14): beyond the existing
+    # exception-triggered per-query fallback (app/research/providers/fallback.py,
+    # unchanged), ResearchEngine issues a small supplementary batch of the
+    # weakest-covered queries directly to the fallback provider when the
+    # PRIMARY provider's aggregate results look weak - see
+    # app/research/research_engine.py._needs_quality_fallback.
+    research_quality_fallback_min_sources: int = 4
+    research_quality_fallback_min_domains: int = 3
+    research_quality_fallback_max_queries: int = 4
+
+    # Identity resolution (Phase 11): a source below this relevance score
+    # (0-1, app/research/identity_resolution.py) is treated as low-confidence
+    # and excluded before ranking/extraction - it is not deleted, just not
+    # trusted as evidence about this specific guest.
+    research_identity_min_relevance: float = 0.2
+    # Below this AGGREGATE relevance across all evidence, the run is
+    # reported as needing identity confirmation rather than producing a
+    # confident-looking profile from weak evidence.
+    research_identity_confirmation_threshold: float = 0.35
+
+    # Trusted-link retrieval (Phase 12) - see
+    # app/research/collectors/link_content_fetcher.py. Deliberately
+    # conservative: public http/https only, small size/time budget, no
+    # redirect chains long enough to be useful for SSRF probing.
+    research_link_fetch_enabled: bool = True
+    research_link_fetch_timeout_seconds: float = 8.0
+    research_link_fetch_max_bytes: int = 1_500_000
+    research_link_fetch_max_redirects: int = 3
+    research_link_fetch_max_text_chars: int = 4000
+
     research_extractor_provider: str = "mock"
     # Kept modest by default so a single extraction request comfortably fits
     # within Groq's free/on-demand tier tokens-per-minute budget (8000 TPM
     # for openai/gpt-oss-20b as observed) alongside the system prompt and
     # JSON schema overhead. Raise these if using a higher Groq tier.
+    # Evidence budget (Phase 17): "max_sources" is now Stage B's (richer
+    # per-source evidence) limit; Stage A (cheap candidate evaluation - see
+    # app/research/extraction/source_selector.py) considers every
+    # deduplicated source before narrowing down to this many.
     research_extractor_max_sources: int = 8
     research_extractor_max_source_chars: int = 700
 
@@ -77,6 +124,23 @@ class Settings(BaseSettings):
     question_generation_max_count: int = 20
     question_generation_max_research_items: int = 30
     question_generation_max_input_chars: int = 12000
+    # Generate a bounded surplus, then remove historical/intra-batch semantic
+    # duplicates and select a diverse final set. One refill keeps cost bounded.
+    question_generation_candidate_multiplier: float = Field(default=1.5, ge=1.0, le=3.0)
+    question_generation_max_candidates: int = Field(default=30, ge=1, le=60)
+    question_generation_max_refill_attempts: int = Field(default=1, ge=0, le=2)
+    question_generation_max_existing_questions: int = Field(default=500, ge=1, le=2000)
+    question_generation_max_existing_prompt_questions: int = Field(default=50, ge=1, le=500)
+    question_generation_max_semantic_pairs: int = Field(default=80, ge=1, le=300)
+    question_generation_lexical_duplicate_threshold: float = Field(
+        default=0.88, ge=0.5, le=1.0
+    )
+    question_generation_intent_duplicate_threshold: float = Field(
+        default=0.82, ge=0.5, le=1.0
+    )
+    question_generation_semantic_candidate_threshold: float = Field(
+        default=0.12, ge=0.0, le=1.0
+    )
 
     question_improver_provider: str = "mock"
     groq_question_improvement_model: str = "openai/gpt-oss-120b"

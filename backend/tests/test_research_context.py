@@ -7,9 +7,12 @@ from app.questions.generation.research_context import build_research_context
 def _fake_research(**fields) -> SimpleNamespace:
     defaults = dict(
         career_history=[],
+        education=[],
         achievements=[],
         projects=[],
+        topics=[],
         interesting_events=[],
+        public_appearances=[],
         potential_interview_angles=[],
         sources=[{"url": "https://should-never-be-read.example", "content": "x" * 10000}],
     )
@@ -77,6 +80,71 @@ class ResearchContextBuilderTests(unittest.TestCase):
         research = _fake_research(achievements=[{"title": "No sources listed"}])
         items = build_research_context(research)
         self.assertEqual(items[0].source_urls, [])
+
+    def test_education_topics_and_public_appearances_enter_context(self):
+        research = _fake_research(
+            education=[
+                {
+                    "institution": "King Saud University",
+                    "degree": "BSc",
+                    "field": "Computer Science",
+                }
+            ],
+            topics=["machine learning"],
+            public_appearances=[
+                {
+                    "title": "AI Industry Podcast",
+                    "appearance_type": "podcast",
+                    "venue": "Tech Radio",
+                }
+            ],
+        )
+        items = build_research_context(research)
+        item_types = {item.item_type for item in items}
+        self.assertIn("education", item_types)
+        self.assertIn("topic", item_types)
+        self.assertIn("public_appearance", item_types)
+
+    def test_overlapping_fact_and_interview_angle_are_merged(self):
+        research = _fake_research(
+            career_history=[
+                {
+                    "role": "Operations Analyst",
+                    "company": "Boeing",
+                    "description": "Worked in aerospace operations before moving to data science",
+                    "source_urls": ["https://example.org/career"],
+                }
+            ],
+            potential_interview_angles=[
+                {
+                    "title": "Transition from Boeing operations into data science",
+                    "reason": "A major career shift worth exploring",
+                    "source_urls": ["https://example.org/career"],
+                }
+            ],
+        )
+        items = build_research_context(research)
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0].item_type, "career_history")
+        self.assertIn("Related angle", items[0].fact)
+
+    def test_distinct_roles_at_same_company_are_not_collapsed(self):
+        research = _fake_research(
+            career_history=[
+                {
+                    "role": "Data Scientist I",
+                    "company": "MOZN",
+                    "source_urls": ["https://example.org/profile"],
+                },
+                {
+                    "role": "Data Scientist II",
+                    "company": "MOZN",
+                    "source_urls": ["https://example.org/profile"],
+                },
+            ]
+        )
+        items = build_research_context(research)
+        self.assertEqual(len(items), 2)
 
 
 if __name__ == "__main__":

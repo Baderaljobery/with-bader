@@ -4,21 +4,20 @@ from app.design_planning.context import gather_slide_planning_context, has_suffi
 from app.database.session import SessionLocal
 from app.schemas.block import BlockCreate
 from app.schemas.content_draft import ContentDraftCreate
-from app.schemas.guest import GuestCreate
+
 from app.schemas.notebook import NotebookCreate
 from app.schemas.notebook_page import NotebookPageCreate
 from app.schemas.question import QuestionAnswerUpdate, QuestionCreate
 from app.services import block_service, content_service, notebook_page_service, notebook_service, question_service
 from app.services.guest_service import create_guest, delete_guest
-from tests.db_test_helpers import create_test_owner, delete_test_owner
-
+from tests.db_test_helpers import create_test_owner, delete_test_owner, make_guest_create
 
 class DesignPlanningContextTests(unittest.TestCase):
     def setUp(self):
         self.db = SessionLocal()
         self.owner = create_test_owner(self.db)
         self.guest = create_guest(
-            self.db, GuestCreate(name="Design Planning Context Test Guest"), self.owner.id
+            self.db, make_guest_create(name="Design Planning Context Test Guest"), self.owner.id
         )
 
     def tearDown(self):
@@ -44,7 +43,7 @@ class DesignPlanningContextTests(unittest.TestCase):
         self.assertTrue(has_sufficient_context(items))
 
     def test_content_draft_from_different_guest_is_rejected(self):
-        other_guest = create_guest(self.db, GuestCreate(name="Other Guest"), self.owner.id)
+        other_guest = create_guest(self.db, make_guest_create(name="Other Guest"), self.owner.id)
         try:
             other_draft = content_service.create_content_draft(
                 self.db, other_guest.id, ContentDraftCreate(platform="linkedin", length="short", content="x")
@@ -118,7 +117,6 @@ class DesignPlanningContextTests(unittest.TestCase):
             self.db, self.guest.id, draft.id, [question.id], [block.id]
         )
         self.assertEqual([item.category for item in items], ["content_draft", "answers", "notebook"])
-
 
 if __name__ == "__main__":
     unittest.main()

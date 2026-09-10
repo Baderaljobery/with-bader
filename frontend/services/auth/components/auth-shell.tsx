@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { AnimatedLogo } from "@/components/brand/animated-logo";
+import { BackgroundPattern } from "@/components/brand/background-pattern";
 import { Logo } from "@/components/brand/logo";
 
 /**
@@ -18,20 +20,21 @@ export function AuthShell({ children }: { children: ReactNode }) {
   return (
     <div
       dir="rtl"
-      className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#F7F8FA] px-4 py-10"
+      className="relative isolate flex min-h-dvh items-center justify-center overflow-hidden bg-[#F7F8FA] px-4 py-10"
     >
+      <BackgroundPattern />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-24 start-1/4 size-96 rounded-full opacity-70 blur-3xl"
+        className="pointer-events-none absolute -top-24 start-1/4 z-0 size-96 rounded-full opacity-70 blur-3xl"
         style={{ backgroundImage: "var(--glow-teal)" }}
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-32 end-1/4 size-96 rounded-full opacity-70 blur-3xl"
+        className="pointer-events-none absolute -bottom-32 end-1/4 z-0 size-96 rounded-full opacity-70 blur-3xl"
         style={{ backgroundImage: "var(--glow-blue)" }}
       />
 
-      <div className="relative grid w-full max-w-4xl overflow-hidden rounded-3xl border border-[#E6EAF0] bg-white shadow-[var(--shadow-elevated)] md:grid-cols-2">
+      <div className="relative z-10 grid w-full max-w-4xl overflow-hidden rounded-3xl border border-[#E6EAF0] bg-white shadow-[var(--shadow-elevated)] md:grid-cols-2">
         <div
           className="relative hidden flex-col justify-between overflow-hidden p-10 text-white md:flex"
           style={{ backgroundImage: "var(--gradient-primary)" }}
@@ -46,7 +49,9 @@ export function AuthShell({ children }: { children: ReactNode }) {
           />
 
           <div className="relative mt-10 w-fit self-center">
-            <Logo size="lg" className="h-25 brightness-0 invert" />
+            {/* Continuous brand animation, not a loading state - loops for
+                as long as the login screen is open (AnimatedLogo). */}
+            <AnimatedLogo loopSeconds={4} className="h-25 w-auto brightness-0 invert" />
           </div>
 
           <div className="relative space-y-3">
